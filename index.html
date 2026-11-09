@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Будова слова — слово-конструктор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marck+Script&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F9FF; --rule:#D5E3F6; --margin:#F2A3A3; --surface:#FFFFFF; --ink:#16224A; --muted:#4F5D88; --line:#BFCDE6; --soft:#EAF1FC;
+  --accent:#2446C8; --accent-ink:#FFFFFF;
+  --p:#0B8A5E; --r:#D93A22; --s:#2A62DB; --e:#F2B01E; --b:#7B4FD6;
+  --on-p:#FFFFFF; --on-r:#FFFFFF; --on-s:#FFFFFF; --on-e:#16224A; --on-b:#FFFFFF;
+  --ok:#0F7A4B; --ok-bg:#DDF4E8; --bad:#B3261E; --bad-bg:#FCE6E3; --warn-bg:#FFF2CC; --stage:#E7F0FF; --shadow:#16224A;
+  --hand:"Marck Script","Segoe Script","Comic Sans MS",cursive;
+  --font:"Nunito","Segoe UI",Roboto,Arial,sans-serif;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1430; --rule:#19244C; --margin:#7B3B52; --surface:#141D40; --ink:#E9EEFF; --muted:#A3B2E3; --line:#2B3A70; --soft:#1B2653;
+    --accent:#90B0FF; --accent-ink:#0D1430;
+    --p:#3DD598; --r:#FF7C66; --s:#82A8FF; --e:#FFC94D; --b:#B79CFF;
+    --on-p:#0D1430; --on-r:#0D1430; --on-s:#0D1430; --on-e:#0D1430; --on-b:#0D1430;
+    --ok:#5FD39B; --ok-bg:#12301F; --bad:#FF9A90; --bad-bg:#3B1B22; --warn-bg:#3A3115; --stage:#101A3D; --shadow:#000000;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1430; --rule:#19244C; --margin:#7B3B52; --surface:#141D40; --ink:#E9EEFF; --muted:#A3B2E3; --line:#2B3A70; --soft:#1B2653;
+  --accent:#90B0FF; --accent-ink:#0D1430;
+  --p:#3DD598; --r:#FF7C66; --s:#82A8FF; --e:#FFC94D; --b:#B79CFF;
+  --on-p:#0D1430; --on-r:#0D1430; --on-s:#0D1430; --on-e:#0D1430; --on-b:#0D1430;
+  --ok:#5FD39B; --ok-bg:#12301F; --bad:#FF9A90; --bad-bg:#3B1B22; --warn-bg:#3A3115; --stage:#101A3D; --shadow:#000000;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px);-webkit-text-size-adjust:100%}
+body{margin:0;color:var(--ink);font:400 17px/1.6 var(--font);background-color:var(--paper);
+  background-image:linear-gradient(var(--rule) 1px,transparent 1px);background-size:100% 34px;min-height:100vh}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+body::after{content:"";position:fixed;top:0;bottom:0;left:clamp(8px,2.4vw,40px);width:2px;background:var(--margin);opacity:.75;pointer-events:none;z-index:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{margin:0;font-weight:400;font-family:var(--hand);line-height:1.1}
+h1{font-size:clamp(48px,8.5vw,92px)}
+h2{font-size:clamp(32px,4.6vw,46px);margin-bottom:8px}
+h3{font-size:29px;margin-bottom:6px}
+p{margin:0 0 .8em}
+b,strong{font-weight:800}
+.muted{color:var(--muted)}
+.wrap{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:0 20px 0 clamp(22px,5vw,64px)}
+[hidden]{display:none!important}
+
+/* ---------- buttons, fields ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:2px solid var(--ink);background:var(--surface);color:var(--ink);
+  border-radius:12px;padding:8px 16px;font:800 16px/1.3 var(--font);cursor:pointer;box-shadow:3px 3px 0 var(--shadow);transition:transform .08s,box-shadow .08s;text-align:center}
+.btn:hover{background:var(--soft)}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--shadow)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;transform:none}
+.btn.opt{box-shadow:none;border-width:2px;padding:7px 14px;font-weight:700}
+.btn.opt[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.field{display:flex;flex-direction:column;gap:4px;font-weight:800;font-size:15px;margin:0 0 14px}
+.field input,.sel{border:2px solid var(--ink);background:var(--surface);border-radius:10px;padding:9px 12px;font:600 17px var(--font);max-width:420px;width:100%}
+.sel{padding:6px 8px;font-size:15px;max-width:none;width:auto}
+
+/* ---------- hero ---------- */
+.hero{padding:26px 0 22px;position:relative;z-index:1}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:30px;align-items:center}
+.hero .lead{font-size:19px;max-width:34em;margin:12px 0 18px}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.hero-3d .caption{min-height:3.4em;margin:12px 0 8px;font-size:16px}
+.stage{position:relative;background:var(--stage);border:2px solid var(--ink);border-radius:18px;overflow:hidden;height:270px}
+.stage canvas{display:block;width:100%;height:100%;touch-action:pan-y;cursor:grab}
+.stage .nogl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;text-align:center;color:var(--muted);font-weight:600}
+.stage.tall{height:400px}
+.stage.mid{height:300px}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.picks{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:4px 12px;border:2px solid var(--ink);border-radius:10px;
+  font:800 21px/1 var(--font);background:var(--soft);color:var(--ink);cursor:default}
+button.chip{cursor:pointer}
+.chip.p{background:var(--p);color:var(--on-p)} .chip.r{background:var(--r);color:var(--on-r)}
+.chip.s{background:var(--s);color:var(--on-s)} .chip.e{background:var(--e);color:var(--on-e)}
+.chip.sel{outline:4px solid var(--accent);outline-offset:2px}
+.chip.used{opacity:.3;pointer-events:none}
+.chip.sm{min-height:34px;font-size:17px;padding:2px 9px}
+
+/* ---------- tabs ---------- */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-block:2px solid var(--ink)}
+.tabs .wrap{display:flex;gap:6px;overflow-x:auto;padding-top:8px;padding-bottom:8px}
+.tabs a{padding:8px 18px;border-radius:999px;border:2px solid transparent;text-decoration:none;color:var(--ink);font-weight:800;white-space:nowrap}
+.tabs a:hover{border-color:var(--line)}
+.tabs a.on{background:var(--accent);color:var(--accent-ink);border-color:var(--ink)}
+.view{padding:26px 0 70px}
+.warn{position:relative;z-index:25;background:var(--warn-bg);border-bottom:2px solid var(--ink);padding:10px 20px;font-weight:700;text-align:center}
+
+/* ---------- cards ---------- */
+.card{background:var(--surface);border:2px solid var(--ink);border-radius:16px;padding:18px 22px;box-shadow:5px 5px 0 var(--shadow)}
+.lead{font-size:18px}
+.rule{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:22px;margin:22px 0}
+.rule .remember{background:var(--soft);border-left:6px solid var(--accent);border-radius:6px 12px 12px 6px;padding:8px 14px;font-weight:700;margin:10px 0 0}
+.demo{background:var(--soft);border:2px dashed var(--line);border-radius:14px;padding:12px 16px}
+.demo .title{font-weight:800;margin-bottom:6px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.out{min-height:5.2em}
+.mean{margin:6px 0 0}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:18px 0}
+.legend .li{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.legend .li b{font-size:18px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cmp>div{border:2px solid var(--ink);border-radius:12px;padding:12px 16px;background:var(--surface)}
+.steps{counter-reset:st;list-style:none;padding:0;margin:8px 0 0;display:grid;gap:8px}
+.steps li{counter-increment:st;display:flex;gap:12px;align-items:flex-start}
+.steps li::before{content:counter(st);flex:none;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:800;display:flex;align-items:center;justify-content:center}
+
+/* ---------- marked word (шкільні позначки) ---------- */
+.mw{display:inline-flex;align-items:flex-end;font:800 36px/1.3 var(--font);padding:20px 4px 10px;margin:2px 6px 2px 0}
+.mw span{position:relative;display:inline-block;padding:0 1px}
+.mw .mp{border-top:3px solid var(--p);border-left:3px solid var(--p);padding-left:3px}
+.mw .mr{border-top:3px solid var(--r);border-radius:50% 50% 0 0 / 30% 30% 0 0}
+.mw .ms::before{content:"";position:absolute;left:50%;top:-5px;width:11px;height:11px;border-top:3px solid var(--s);border-left:3px solid var(--s);transform:translateX(-50%) rotate(45deg)}
+.mw .me{border:3px solid var(--e);padding:0 4px;border-radius:2px}
+.mw .mbase{display:inline-flex;border-bottom:3px solid var(--b);padding-bottom:7px;margin-bottom:-10px;margin-right:2px}
+.mw .mbase::before,.mw .mbase::after{content:"";position:absolute;bottom:-3px;width:3px;height:14px;background:var(--b)}
+.mw .mbase::before{left:-1px}.mw .mbase::after{right:-1px}
+.rootdemo.hl .mw span:not(.mr):not(.mbase){opacity:.22}
+.mw.small{font-size:30px}
+
+/* ---------- practice ---------- */
+.pgrid{display:grid;grid-template-columns:280px minmax(0,1fr);gap:24px;align-items:start}
+.mlist{display:flex;flex-direction:column;gap:8px}
+.mitem{display:flex;align-items:center;gap:10px;text-align:left;width:100%;border:2px solid var(--ink);background:var(--surface);border-radius:12px;padding:8px 12px;cursor:pointer;font-weight:700}
+.mitem .n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--soft);border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-weight:800}
+.mitem .t{flex:1;line-height:1.25}
+.mitem .st{font-size:14px;color:var(--muted);white-space:nowrap}
+.mitem[aria-current="true"]{background:var(--accent);color:var(--accent-ink)}
+.mitem[aria-current="true"] .st{color:var(--accent-ink)}
+.mitem.done .n{background:var(--ok);color:var(--surface)}
+.mission .goal{background:var(--soft);border-radius:12px;padding:10px 14px;margin:8px 0 14px}
+.task{margin:6px 0 14px}
+.mctrl{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.fb{border-radius:12px;padding:10px 14px;font-weight:700;margin:8px 0;background:var(--soft);min-height:2.6em}
+.fb:empty{display:none}
+.fb.ok{background:var(--ok-bg);color:var(--ok)} .fb.bad{background:var(--bad-bg);color:var(--bad)} .fb.warn{background:var(--warn-bg)}
+.hintbox{border:2px dashed var(--accent);border-radius:12px;padding:10px 14px;margin:8px 0}
+
+.cutrow,.paintrow,.endrow,.fcrow,.oddrow,.caprow{display:flex;align-items:center;flex-wrap:wrap;gap:10px 16px;padding:10px 12px;border:2px solid var(--line);border-radius:12px;margin-bottom:10px;background:var(--surface)}
+.cutrow.ok,.paintrow.ok,.endrow.ok,.fcrow.ok,.oddrow.ok,.caprow.ok{border-color:var(--ok);background:var(--ok-bg)}
+.cutrow.no,.paintrow.no,.endrow.no,.fcrow.no,.oddrow.no,.caprow.no{border-color:var(--bad);background:var(--bad-bg)}
+.cutword{display:flex;align-items:center}
+.ltr{font:800 30px/1 var(--font);padding:6px 1px}
+.gap{width:18px;height:46px;border:0;background:transparent;position:relative;cursor:pointer;padding:0}
+.gap::after{content:"";position:absolute;left:50%;top:3px;bottom:3px;border-left:2px dotted var(--muted);transform:translateX(-50%)}
+.gap:hover::after{border-left:3px solid var(--accent)}
+.gap.on::after{border-left:5px solid var(--r)}
+.rowmark{font-weight:800;font-size:22px}
+.palette{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+.palette .chip{cursor:pointer}
+.palette .chip[aria-pressed="true"]{outline:4px solid var(--accent);outline-offset:2px}
+.paintword{display:flex;gap:3px}
+.paintword .chip{min-width:46px}
+.lt{font:800 30px/1 var(--font);min-width:34px;height:52px;border:0;background:transparent;border-bottom:4px solid var(--line);cursor:pointer;padding:0 1px;color:var(--ink)}
+.lt:hover{background:var(--soft)}
+.lt.e{background:var(--e);color:var(--on-e);border-bottom-color:var(--e);border-radius:6px 6px 0 0}
+.lt.b{border-bottom-color:var(--b)}
+.tip{font-size:14px;color:var(--muted);flex-basis:100%}
+.cardgame{text-align:center;padding:10px}
+.bigcard{font:800 clamp(44px,9vw,70px)/1.1 var(--font);padding:22px;border:3px solid var(--ink);border-radius:20px;background:var(--surface);margin:10px auto 16px;max-width:420px;box-shadow:6px 6px 0 var(--shadow)}
+.row2{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+.row2 .btn{font-size:20px;padding:12px 26px}
+.fcw,.ow{font:800 24px var(--font);min-width:6em}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.oddopts{display:flex;gap:8px;flex-wrap:wrap}
+.rootblk{margin-bottom:18px}
+.addrow{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.addrow input{border:2px solid var(--ink);border-radius:10px;padding:8px 12px;font:600 18px var(--font);background:var(--surface);flex:1 1 200px;min-width:0}
+.found{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.found .chip{font-size:17px;min-height:38px}
+.capcols{display:flex;gap:8px;flex-wrap:wrap}
+.capcol{display:flex;flex-direction:column;gap:6px;align-items:center}
+.capextra{display:flex;gap:16px;flex-wrap:wrap;flex-basis:100%;align-items:center}
+
+/* ---------- lab ---------- */
+.exp{margin:0 0 34px}
+.exp-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:start}
+.slots{display:flex;flex-wrap:wrap;gap:6px;min-height:58px;padding:8px;border:2px dashed var(--ink);border-radius:12px;margin:8px 0;align-items:center}
+.slots .ph{color:var(--muted);font-weight:600}
+.tray{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.clue{font-size:20px;font-weight:800;margin:0 0 4px}
+.rounds{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.rounds button{width:40px;height:40px;border-radius:50%;border:2px solid var(--ink);background:var(--surface);font-weight:800;cursor:pointer}
+.rounds button.cur{background:var(--accent);color:var(--accent-ink)}
+.rounds button.done{background:var(--ok);color:var(--surface)}
+.ctrls{display:flex;flex-direction:column;gap:12px}
+.ctrl-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ctrl-line input[type=range]{flex:1 1 160px;accent-color:var(--accent)}
+.ctrl-line input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
+.readout{margin:6px 0;min-height:4.6em}
+.towerlist{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.trow{display:flex;gap:10px;align-items:center;border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:0 10px;cursor:pointer;text-align:left}
+.trow[aria-pressed="true"]{border-color:var(--accent);background:var(--soft)}
+.trow .mw{font-size:28px;padding:16px 2px 6px}
+.quiz{display:grid;gap:12px;margin:10px 0}
+.q{border:2px solid var(--line);border-radius:12px;padding:8px 14px 10px;margin:0;background:var(--surface)}
+.q legend{font-weight:800;padding:0 6px}
+.opt-l{display:flex;gap:10px;align-items:center;padding:4px 0;cursor:pointer}
+.opt-l input{width:20px;height:20px;accent-color:var(--accent)}
+.qfb{font-weight:700;margin:6px 0 0}
+.qfb.ok{color:var(--ok)} .qfb.bad{color:var(--bad)}
+.q.ok{border-color:var(--ok)} .q.no{border-color:var(--bad)}
+
+/* ---------- result ---------- */
+.rtable{width:100%;border-collapse:collapse;margin:12px 0}
+.rtable th,.rtable td{border-bottom:2px solid var(--line);padding:8px 10px;text-align:left}
+.rtable td.n{text-align:right;white-space:nowrap;font-weight:800}
+.big{font:800 40px/1.1 var(--font)}
+.rsum{display:flex;flex-wrap:wrap;gap:16px 40px;align-items:flex-end;margin:12px 0}
+
+@media (max-width:900px){
+  .hero-grid,.rule,.exp-grid,.pgrid,.cmp{grid-template-columns:1fr}
+  .mlist{flex-direction:row;overflow-x:auto;padding-bottom:6px}
+  .mitem{width:auto;flex:none}
+  .mitem .st{display:none}
+}
+@media (max-width:560px){
+  .stage{height:240px}.stage.tall{height:340px}.mw{font-size:30px}.card{padding:14px 14px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="warn" id="warn" hidden role="alert">Браузер не дозволяє зберігати прогрес (можливо, увімкнено приватний режим). Не оновлюй сторінку, доки не зробиш знімок вкладки «Мій результат».</div>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="muted" style="font-weight:800;margin:0 0 4px">Українська мова, 5 клас</p>
+      <h1>Будова слова</h1>
+      <p class="lead">Кожне слово збудоване з частин, як конструктор. Збирай слова з цеглинок, розбирай їх на частини й вчись знаходити префікс, корінь, суфікс і закінчення.</p>
+      <label class="field">Твоє прізвище та ім’я (для звіту)
+        <input id="pname" type="text" autocomplete="off" placeholder="Наприклад: Коваленко Марія">
+      </label>
+      <p class="muted" style="font-size:15px">Прогрес зберігається в цьому браузері автоматично — після оновлення сторінки нічого не зникне.</p>
+      <div class="cta">
+        <button class="btn primary" type="button" data-go="theory">Почати з теорії</button>
+        <button class="btn" type="button" data-go="practice">До практики</button>
+      </div>
+    </div>
+    <div class="hero-3d">
+      <div class="stage" id="hero-stage">
+        <canvas id="c-hero" aria-label="3D-модель слова з кольорових цеглинок. Торкнись цеглинки, щоб дізнатися, що це за частина."></canvas>
+      </div>
+      <p class="caption" id="hero-cap" aria-live="polite">Потягни слово, щоб повернути його. Торкнись цеглинки — дізнаєшся, що це за частина слова.</p>
+      <div class="chiprow" id="hero-chips"></div>
+      <div class="picks" id="hero-pick" aria-label="Обери слово"></div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Розділи">
+  <div class="wrap">
+    <a href="#theory" data-view="theory">Теорія</a>
+    <a href="#practice" data-view="practice">Практика</a>
+    <a href="#lab" data-view="lab">3D-лабораторія</a>
+    <a href="#result" data-view="result">Мій результат</a>
+  </div>
+</nav>
+
+<main>
+<!-- ======================= THEORY ======================= -->
+<section class="view" id="v-theory">
+  <div class="wrap">
+    <h2>Із чого складається слово</h2>
+    <p class="lead">У слові є частини, які мають значення: <b>префікс, корінь, суфікс, закінчення</b>. Кожну частину слова на письмі позначають значком, а в нас ці значки ще й кольорові. Спробуй усі міні-досліди в картках нижче.</p>
+    <div class="card legend" id="legend" aria-label="Умовні позначки"></div>
+    <p class="muted" style="font-size:15px">У твоєму підручнику позначки можуть трохи відрізнятися. Користуйся тими, що показали на уроці.</p>
+
+    <article class="rule card" id="r-prefix">
+      <div>
+        <h3>Префікс</h3>
+        <p>Префікс стоїть <b>перед коренем</b>. Його ще називають приставкою. З префіксом утворюється нове слово з іншим значенням. Префікса в слові може й не бути.</p>
+        <p class="remember">Префікс пишеться разом зі словом і стоїть перед коренем.</p>
+      </div>
+      <div class="demo">
+        <div class="title">Приєднай префікс до кореня «пис»</div>
+        <div class="opts" id="d-pre-btns"></div>
+        <div class="out" id="d-pre-out" aria-live="polite"></div>
+      </div>
+    </article>
+
+    <article class="rule card" id="r-root">
+      <div>
+        <h3>Корінь</h3>
+        <p>Корінь — <b>головна частина слова</b>. У ньому міститься основне значення. Слова з однаковим коренем називають <b>спільнокореневими</b>. Корінь є в кожному слові.</p>
+        <p class="remember">Щоб знайти корінь, добери спільнокореневі слова: у них він однаковий.</p>
+      </div>
+      <div class="demo rootdemo" id="d-root">
+        <div class="title">Слова зі спільним коренем «вод»</div>
+        <div id="d-root-list"></div>
+        <button class="btn opt" id="d-root-btn" type="button" aria-pressed="false">Підсвітити корінь</button>
+      </div>
+    </article>
+
+    <article class="rule card" id="r-suffix">
+      <div>
+        <h3>Суфікс</h3>
+        <p>Суфікс стоїть <b>після кореня</b>. Він допомагає утворити нове слово або додає відтінок значення. Суфіксів може бути кілька, а може не бути жодного.</p>
+        <p class="remember">Суфікс стоїть після кореня й перед закінченням.</p>
+      </div>
+      <div class="demo">
+        <div class="title">Додай до кореня «вод» суфікс</div>
+        <div class="opts" id="d-suf-btns"></div>
+        <div class="out" id="d-suf-out" aria-live="polite"></div>
+      </div>
+    </article>
+
+    <article class="rule card" id="r-ending">
+      <div>
+        <h3>Закінчення</h3>
+        <p>Закінчення стоїть <b>у кінці слова</b>. Воно змінюється, коли слово змінюється за числом, родом чи відмінком, і зв’язує слова в реченні. Нових слів за допомогою закінчення не утворюють.</p>
+        <p>Буває й <b>нульове закінчення</b>. Його не видно, але воно є, наприклад у словах «ліс», «стіл».</p>
+        <p class="remember">Закінчення змінюється. Щоб його знайти, зміни слово.</p>
+      </div>
+      <div class="demo">
+        <div class="title">Змінюй закінчення слова «зимовий»</div>
+        <div class="opts" id="d-end-btns"></div>
+        <div class="out" id="d-end-out" aria-live="polite"></div>
+      </div>
+    </article>
+
+    <article class="rule card" id="r-base">
+      <div>
+        <h3>Основа слова</h3>
+        <p>Основа — це <b>слово без закінчення</b>. Коли слово змінюється, основа залишається такою самою, а закінчення змінюється: вікн-о, вікн-а, вікн-ом. Основу позначають дужкою знизу.</p>
+        <p class="remember">Основа = усе слово, крім закінчення.</p>
+      </div>
+      <div class="demo">
+        <div class="title">Знайди основу</div>
+        <div class="opts" id="d-base-btns"></div>
+        <div class="out" id="d-base-out" aria-live="polite"></div>
+      </div>
+    </article>
+
+    <article class="rule card" id="r-change">
+      <div>
+        <h3>Змінні й незмінні слова</h3>
+        <p><b>Змінні</b> слова мають закінчення й змінюються: зима — зими — зимі. <b>Незмінні</b> слова закінчення не мають і ніколи не змінюються: вчора, дуже, під, і, ах.</p>
+        <p class="remember">Хочеш дізнатися, чи слово змінне, — спробуй його змінити.</p>
+      </div>
+      <div class="demo">
+        <div class="title">Спробуй змінити слово</div>
+        <div class="opts" id="d-chg-btns"></div>
+        <div class="out" id="d-chg-out" aria-live="polite"></div>
+      </div>
+    </article>
+
+    <article class="card" id="r-fam" style="margin:22px 0">
+      <h3>Спільнокореневі слова та форми слова</h3>
+      <div class="cmp" id="cmp"></div>
+      <p class="remember" style="margin-top:14px;background:var(--soft);border-left:6px solid var(--accent);border-radius:6px 12px 12px 6px;padding:8px 14px;font-weight:700">Форми слова мають однаковий корінь і однакове значення. Спільнокореневі слова мають однаковий корінь, але значення в них різні.</p>
+    </article>
+
+    <article class="card" style="margin:22px 0">
+      <h3>Як розібрати слово за будовою</h3>
+      <ol class="steps">
+        <li><span><b>Змін слово</b> і знайди закінчення. Якщо слово не змінюється, закінчення в нього немає.</span></li>
+        <li><span>Познач <b>основу</b>: це слово без закінчення.</span></li>
+        <li><span>Добери спільнокореневі слова й знайди <b>корінь</b>.</span></li>
+        <li><span>Те, що стоїть перед коренем, — <b>префікс</b>, а після кореня до закінчення — <b>суфікс</b>.</span></li>
+      </ol>
+    </article>
+    <div class="cta"><button class="btn primary" type="button" data-go="practice">Перейти до практики</button><button class="btn" type="button" data-go="lab">3D-лабораторія</button></div>
+  </div>
+</section>
+
+<!-- ======================= PRACTICE ======================= -->
+<section class="view" id="v-practice" hidden>
+  <div class="wrap">
+    <h2>Практика</h2>
+    <p class="lead">Вісім завдань. Проходь їх по черзі, але можна й у будь-якому порядку. Помилятися не страшно: завдання можна повторювати скільки завгодно, у результат піде найкраща спроба.</p>
+    <div class="pgrid">
+      <nav class="mlist" id="mlist" aria-label="Завдання"></nav>
+      <article class="card mission" id="mission" aria-live="polite"></article>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= LAB ======================= -->
+<section class="view" id="v-lab" hidden>
+  <div class="wrap">
+    <h2>3D-лабораторія</h2>
+    <p class="lead">Тут слова — це справжні цеглинки. Їх можна крутити, збирати й розбирати. Колір підказує, що це за частина: <b>зелена — префікс, червона — корінь, синя — суфікс, жовта — закінчення</b>.</p>
+
+    <div class="exp card" id="exp1">
+      <h3>Експеримент 1. Складальник слів</h3>
+      <p>Прочитай опис і збери слово. Торкайся цеглинок у скриньці: вони стануть у ряд зліва направо. Порядок важливий.</p>
+      <div class="exp-grid">
+        <div><div class="stage mid" id="st-l1"><canvas id="c-l1" aria-label="3D-цеглинки слова, яке ти збираєш"></canvas></div></div>
+        <div class="ctrls">
+          <p class="clue" id="l1-clue"></p>
+          <div class="slots" id="l1-slots" aria-label="Зібране слово"></div>
+          <div class="tray" id="l1-tray" aria-label="Скринька з цеглинками"></div>
+          <div class="mctrl">
+            <button class="btn primary" id="l1-check" type="button">Перевірити</button>
+            <button class="btn" id="l1-undo" type="button">Забрати останню</button>
+            <button class="btn" id="l1-clear" type="button">Очистити</button>
+            <button class="btn" id="l1-hint" type="button">Підказка</button>
+            <button class="btn primary" id="l1-next" type="button" hidden>Наступне слово</button>
+          </div>
+          <p class="fb" id="l1-fb" aria-live="polite"></p>
+          <div class="rounds" id="l1-rounds" aria-label="Слова"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exp card" id="exp2">
+      <h3>Експеримент 2. Рентген слова: основа та форми</h3>
+      <p>Обери слово й переглянь усі п’ять його форм. Закінчення міняється, а основа лишається на місці. Потягни повзунок, щоб розібрати слово на цеглинки.</p>
+      <div class="exp-grid">
+        <div><div class="stage mid" id="st-l2"><canvas id="c-l2" aria-label="3D-модель слова: основа та закінчення"></canvas></div>
+          <div class="readout" id="l2-read" aria-live="polite"></div></div>
+        <div class="ctrls">
+          <div><b>1. Обери слово</b><div class="opts" id="l2-words"></div></div>
+          <div><b>2. Змінюй форму слова</b><div class="opts" id="l2-forms"></div><p class="muted" id="l2-count"></p></div>
+          <div class="ctrl-line"><b>3. Розбери</b><input type="range" id="l2-explode" min="0" max="100" value="0" aria-label="Розібрати слово на цеглинки"></div>
+          <label class="ctrl-line"><input type="checkbox" id="l2-base"> <b>Показати основу</b></label>
+        </div>
+      </div>
+      <h4 style="margin:18px 0 6px;font-size:19px">Перевірка</h4>
+      <p class="muted" id="l2-lock">Спочатку переглянь усі п’ять форм слова. Тоді відкриється перевірка.</p>
+      <div id="l2-quiz" hidden></div>
+    </div>
+
+    <div class="exp card" id="exp3">
+      <h3>Експеримент 3. Вежа кореня</h3>
+      <p>Усі слова вишикувані так, щоб їхні корені стояли один над одним. Так добре видно, що спільне, а що відрізняється. Торкнись слова, щоб його виділити.</p>
+      <div class="exp-grid">
+        <div><div class="stage tall" id="st-l3"><canvas id="c-l3" aria-label="3D-вежа слів зі спільним коренем"></canvas></div></div>
+        <div class="ctrls">
+          <div><b>Обери вежу</b><div class="opts" id="l3-towers"></div></div>
+          <label class="ctrl-line"><input type="checkbox" id="l3-root"> <b>Підсвітити корінь</b></label>
+          <p class="caption" id="l3-cap" aria-live="polite"></p>
+          <div class="towerlist" id="l3-list"></div>
+        </div>
+      </div>
+      <h4 style="margin:18px 0 6px;font-size:19px">Перевірка</h4>
+      <p class="muted">Відповідай, уважно розглянувши обидві вежі: «вод» і «пис».</p>
+      <div id="l3-quiz"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= RESULT ======================= -->
+<section class="view" id="v-result" hidden>
+  <div class="wrap">
+    <h2>Мій результат</h2>
+    <p class="lead">Зроби знімок екрана цієї сторінки й надішли вчителю. Переконайся, що видно твоє прізвище та ім’я.</p>
+    <div class="card" id="result-card">
+      <div class="rsum">
+        <div><div class="muted" style="font-weight:800">Учень</div><div class="big" id="r-name">—</div></div>
+        <div><div class="muted" style="font-weight:800">Разом</div><div class="big" id="r-total">0 з 0</div></div>
+        <div><div class="muted" style="font-weight:800">Виконано</div><div class="big" id="r-pct">0%</div></div>
+      </div>
+      <p class="muted" id="r-note"></p>
+      <table class="rtable" id="r-table"><thead><tr><th>Завдання</th><th>Результат</th></tr></thead><tbody></tbody></table>
+      <p class="muted" id="r-date"></p>
+      <button class="btn" id="r-reset" type="button">Почати спочатку</button>
+    </div>
+  </div>
+</section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+"use strict";
+
+/* =============================================================
+   Допоміжні функції
+============================================================= */
+var T = window.THREE || null;
+var REDUCE = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+function $(s, r) { return (r || document).querySelector(s); }
+function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+function btn(text, cls) { var b = document.createElement("button"); b.type = "button"; b.className = "btn" + (cls ? " " + cls : ""); b.textContent = text; return b; }
+function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function setFb(node, text, type) { node.className = "fb" + (type ? " " + type : ""); node.innerHTML = text; }
+
+/* =============================================================
+   Збереження прогресу
+============================================================= */
+var KEY = "ukr5_budova_slova_v1";
+var storageOK = (function () { try { var k = "__t"; localStorage.setItem(k, "1"); localStorage.removeItem(k); return true; } catch (e) { return false; } })();
+var state = { name: "", best: {}, l1: [], started: 0 };
+function load() {
+  try {
+    var s = localStorage.getItem(KEY);
+    if (s) { var o = JSON.parse(s); if (o && typeof o === "object") { state.name = o.name || ""; state.best = o.best || {}; state.l1 = o.l1 || []; state.started = o.started || 0; } }
+  } catch (e) { /* порожнє сховище */ }
+}
+function showWarn() { var w = $("#warn"); if (w) w.hidden = false; }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { storageOK = false; showWarn(); } }
+function setBest(id, score, max) {
+  if (!state.started) state.started = Date.now();
+  var b = state.best[id];
+  if (!b || score > b.s) state.best[id] = { s: score, m: max };
+  else if (b.m !== max) b.m = max;
+  save();
+  refreshBadges();
+  renderResult();
+}
+
+/* =============================================================
+   Дані: частини слів
+============================================================= */
+var KIND_NAME = { p: "префікс", r: "корінь", s: "суфікс", e: "закінчення" };
+var KIND_TEXT = {
+  p: "Префікс (приставка) стоїть перед коренем.",
+  r: "Корінь — головна частина слова. Він є в усіх спільнокореневих слів.",
+  s: "Суфікс стоїть після кореня.",
+  e: "Закінчення стоїть у кінці слова й змінюється разом з формою слова."
+};
+var HERO_WORDS = [
+  { w: "підводний", m: "той, що розташований під водою", parts: [["під", "p"], ["вод", "r"], ["н", "s"], ["ий", "e"]] },
+  { w: "прибережний", m: "той, що розташований біля берега", parts: [["при", "p"], ["береж", "r"], ["н", "s"], ["ий", "e"]] },
+  { w: "переписка", m: "обмін листами", parts: [["пере", "p"], ["пис", "r"], ["к", "s"], ["а", "e"]] },
+  { w: "зимовий", m: "пов’язаний із зимою", parts: [["зим", "r"], ["ов", "s"], ["ий", "e"]] },
+  { w: "квітка", m: "частина рослини з пелюстками", parts: [["квіт", "r"], ["к", "s"], ["а", "e"]] }
+];
+
+/* «Шкільний» запис слова з позначками */
+function mw(parts, withBase, small) {
+  var base = "", end = "";
+  parts.forEach(function (p) {
+    var s = '<span class="m' + p[1] + '">' + esc(p[0]) + "</span>";
+    if (p[1] === "e") end += s; else base += s;
+  });
+  var label = parts.map(function (p) { return p[0] + " — " + KIND_NAME[p[1]]; }).join(", ");
+  var inner = (withBase && base) ? '<span class="mbase">' + base + "</span>" + end : base + end;
+  return '<span class="mw' + (small ? " small" : "") + '" role="img" aria-label="' + esc(label) + '">' + inner + "</span>";
+}
+function chipsHTML(parts) { return parts.map(function (p) { return '<span class="chip ' + p[1] + '">' + esc(p[0]) + "</span>"; }).join(""); }
+
+/* Кнопки-варіанти */
+function opts(box, items, onPick, autoFirst) {
+  box.innerHTML = "";
+  var bs = [];
+  items.forEach(function (it, i) {
+    var b = btn(it[1], "opt");
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", function () {
+      bs.forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+      b.setAttribute("aria-pressed", "true");
+      onPick(it[0], i);
+    });
+    box.appendChild(b); bs.push(b);
+  });
+  if (autoFirst !== false && bs.length) bs[0].click();
+  return bs;
+}
+
+/* Міні-тест для лабораторій */
+function makeQuiz(box, prefix, qs, onScore) {
+  box.innerHTML = "";
+  var form = el("div", "quiz");
+  var fields = [];
+  qs.forEach(function (q, qi) {
+    var f = el("fieldset", "q");
+    f.appendChild(el("legend", "", esc(q.q)));
+    q.o.forEach(function (opt, oi) {
+      var lab = el("label", "opt-l");
+      var inp = document.createElement("input");
+      inp.type = "radio"; inp.name = prefix + "-q" + qi; inp.value = String(oi);
+      lab.appendChild(inp); lab.appendChild(el("span", "", esc(opt)));
+      f.appendChild(lab);
+    });
+    var ex = el("p", "qfb"); ex.hidden = true; f.appendChild(ex);
+    form.appendChild(f); fields.push({ f: f, ex: ex, name: inp_name(prefix, qi) });
+  });
+  function inp_name(p, i) { return p + "-q" + i; }
+  box.appendChild(form);
+  var bar = el("div", "mctrl");
+  var chk = btn("Перевірити відповіді", "primary"), rst = btn("Спробувати ще");
+  var out = el("p", "fb");
+  bar.appendChild(chk); bar.appendChild(rst); box.appendChild(bar); box.appendChild(out);
+  chk.addEventListener("click", function () {
+    var score = 0, missing = false;
+    fields.forEach(function (fl, qi) {
+      var sel = form.querySelector('input[name="' + fl.name + '"]:checked');
+      if (!sel) { missing = true; return; }
+    });
+    if (missing) { setFb(out, "Відповідь потрібна на кожне запитання.", "warn"); return; }
+    fields.forEach(function (fl, qi) {
+      var sel = form.querySelector('input[name="' + fl.name + '"]:checked');
+      var good = Number(sel.value) === qs[qi].a;
+      if (good) score++;
+      fl.f.className = "q " + (good ? "ok" : "no");
+      fl.ex.hidden = false;
+      fl.ex.className = "qfb " + (good ? "ok" : "bad");
+      fl.ex.innerHTML = good ? "Правильно! " + esc(qs[qi].why) : "Ще раз подумай. " + esc(qs[qi].why);
+    });
+    setFb(out, score === qs.length ? "Чудово! Усі відповіді правильні." : "Правильно: " + score + " з " + qs.length + ". Можеш спробувати ще раз.", score === qs.length ? "ok" : "bad");
+    onScore(score, qs.length);
+  });
+  rst.addEventListener("click", function () {
+    $$("input", form).forEach(function (i) { i.checked = false; });
+    fields.forEach(function (fl) { fl.f.className = "q"; fl.ex.hidden = true; });
+    setFb(out, "", "");
+  });
+}
+
+/* =============================================================
+   ТЕОРІЯ: мініпрактикуми
+============================================================= */
+function initTheory() {
+  /* умовні позначки */
+  $("#legend").innerHTML =
+    '<div class="li">' + mw([["під", "p"]], false, true) + "<b>Префікс</b><span>Перед коренем</span></div>" +
+    '<div class="li">' + mw([["вод", "r"]], false, true) + "<b>Корінь</b><span>Головна частина</span></div>" +
+    '<div class="li">' + mw([["н", "s"]], false, true) + "<b>Суфікс</b><span>Після кореня</span></div>" +
+    '<div class="li">' + mw([["ий", "e"]], false, true) + "<b>Закінчення</b><span>У кінці слова</span></div>" +
+    '<div class="li"><span class="mw small"><span class="mbase"><span>підводн</span></span></span><b>Основа</b><span>Слово без закінчення</span></div>';
+
+  /* префікс */
+  var PRE = { "за": ["записка", "коротке письмове повідомлення"], "пере": ["переписка", "обмін листами"], "при": ["приписка", "додатковий текст, дописаний наприкінці листа"], "о": ["описка", "помилка, яку зробили під час письма"] };
+  opts($("#d-pre-btns"), Object.keys(PRE).map(function (k) { return [k, k + "-"]; }), function (p) {
+    var d = PRE[p];
+    $("#d-pre-out").innerHTML = mw([[p, "p"], ["пис", "r"], ["к", "s"], ["а", "e"]]) + '<p class="mean"><b>' + d[0] + "</b> — " + d[1] + ".</p>";
+  });
+
+  /* корінь */
+  var ROOTW = [
+    [["вод", "r"], ["а", "e"]],
+    [["вод", "r"], ["н", "s"], ["ий", "e"]],
+    [["під", "p"], ["вод", "r"], ["н", "s"], ["ий", "e"]],
+    [["без", "p"], ["вод", "r"], ["н", "s"], ["ий", "e"]]
+  ];
+  $("#d-root-list").innerHTML = ROOTW.map(function (p) { return "<div>" + mw(p) + "</div>"; }).join("");
+  $("#d-root-btn").addEventListener("click", function () {
+    var on = this.getAttribute("aria-pressed") !== "true";
+    this.setAttribute("aria-pressed", on ? "true" : "false");
+    $("#d-root").classList.toggle("hl", on);
+  });
+
+  /* суфікс */
+  var SUF = {
+    "н": [[["вод", "r"], ["н", "s"], ["ий", "e"]], "водний", "пов’язаний із водою"],
+    "ян": [[["вод", "r"], ["ян", "s"], ["ий", "e"]], "водяний", "наповнений водою або зроблений із води"],
+    "ичк": [[["вод", "r"], ["ичк", "s"], ["а", "e"]], "водичка", "пестливо про воду"]
+  };
+  opts($("#d-suf-btns"), Object.keys(SUF).map(function (k) { return [k, "-" + k + "-"]; }), function (k) {
+    var d = SUF[k];
+    $("#d-suf-out").innerHTML = mw(d[0]) + '<p class="mean"><b>' + d[1] + "</b> — " + d[2] + ".</p>";
+  });
+
+  /* закінчення */
+  var END = [["ий", "зимовий день"], ["а", "зимова ніч"], ["е", "зимове небо"], ["і", "зимові дні"]];
+  opts($("#d-end-btns"), END.map(function (x, i) { return [i, "-" + x[0]]; }), function (i) {
+    var d = END[i];
+    $("#d-end-out").innerHTML = mw([["зим", "r"], ["ов", "s"], [d[0], "e"]]) + '<p class="mean">' + d[1] + ". Закінчення змінилося, а основа <b>зимов</b> лишилася.</p>";
+  });
+
+  /* основа */
+  var BASEW = {
+    "лісовий": [[["ліс", "r"], ["ов", "s"], ["ий", "e"]], "лісов", "ий"],
+    "дорогою": [[["дорог", "r"], ["ою", "e"]], "дорог", "ою"],
+    "вікном": [[["вікн", "r"], ["ом", "e"]], "вікн", "ом"],
+    "квітками": [[["квіт", "r"], ["к", "s"], ["ами", "e"]], "квітк", "ами"]
+  };
+  opts($("#d-base-btns"), Object.keys(BASEW).map(function (k) { return [k, k]; }), function (k) {
+    var d = BASEW[k];
+    $("#d-base-out").innerHTML = mw(d[0], true) + '<p class="mean">Закінчення: <b>-' + d[2] + "</b>. Основа: <b>" + d[1] + "</b>.</p>";
+  });
+
+  /* змінні / незмінні */
+  var CHG = {
+    "зима": "зима — зими — зимі — зимою. Закінчення змінюється, слово змінне.",
+    "великий": "великий — великого — великому. Слово змінне.",
+    "ліс": "ліс — лісу — лісом. Слово змінне.",
+    "вчора": "Форм у слова немає. Слово незмінне, закінчення в нього немає.",
+    "дуже": "Форм у слова немає. Слово незмінне.",
+    "під": "Форм у слова немає. Слово незмінне."
+  };
+  opts($("#d-chg-btns"), Object.keys(CHG).map(function (k) { return [k, k]; }), function (k) {
+    $("#d-chg-out").innerHTML = '<p class="mean"><b>' + esc(k) + "</b>: " + CHG[k] + "</p>";
+  }, false);
+  $("#d-chg-out").innerHTML = '<p class="mean muted">Натисни на слово, щоб спробувати його змінити.</p>';
+
+  /* порівняння */
+  $("#cmp").innerHTML =
+    "<div><b>Спільнокореневі слова</b><p>Однаковий корінь, але <b>різні слова</b> з різним значенням.</p>" +
+    mw([["ліс", "r"], ["ов", "s"], ["ий", "e"]], false, true) + mw([["ліс", "r"], ["ник", "s"]], false, true) + mw([["під", "p"], ["ліс", "r"], ["ок", "s"]], false, true) + "</div>" +
+    "<div><b>Форми слова</b><p>Те саме слово, значення однакове, <b>змінюється закінчення</b>.</p>" +
+    mw([["ліс", "r"]], false, true) + mw([["ліс", "r"], ["у", "e"]], false, true) + mw([["ліс", "r"], ["ом", "e"]], false, true) + mw([["ліс", "r"], ["і", "e"]], false, true) + "</div>";
+}
+
+/* =============================================================
+   ПРАКТИКА
+============================================================= */
+var CUT_WORDS = [
+  { w: "переписка", cuts: [4, 7, 8] },
+  { w: "зарічний", cuts: [2, 5, 6] },
+  { w: "лісовий", cuts: [3, 5] },
+  { w: "безхмарний", cuts: [3, 7, 8] }
+];
+var PAINT_WORDS = [
+  [["під", "p"], ["вод", "r"], ["н", "s"], ["ий", "e"]],
+  [["при", "p"], ["береж", "r"], ["н", "s"], ["ий", "e"]],
+  [["квіт", "r"], ["к", "s"], ["а", "e"]],
+  [["дорог", "r"], ["ою", "e"]]
+];
+var END_WORDS = [
+  { w: "дорогою", at: 5, tip: "дорога — дорогу — дорогою" },
+  { w: "зимових", at: 5, tip: "зимовий — зимова — зимових" },
+  { w: "квітками", at: 5, tip: "квітка — квітки — квітками" },
+  { w: "лісом", at: 3, tip: "ліс — лісу — лісом" },
+  { w: "підводному", at: 7, tip: "підводний — підводного — підводному" }
+];
+var CARDS = [
+  ["зима", 1, "зима — зими — зимі: закінчення змінюється."],
+  ["під", 0, "«під» не змінюється й закінчення не має."],
+  ["великий", 1, "великий — великого — великому: слово змінне."],
+  ["вчора", 0, "«вчора» не змінюється й закінчення не має."],
+  ["ліс", 1, "ліс — лісу — лісом: слово змінне."],
+  ["дуже", 0, "«дуже» не змінюється."],
+  ["читаю", 1, "читаю — читаєш — читає: слово змінне."],
+  ["ах", 0, "«ах» не змінюється."],
+  ["добрий", 1, "добрий — добра — добре: слово змінне."],
+  ["і", 0, "«і» не змінюється."],
+  ["вікно", 1, "вікно — вікна — вікном: слово змінне."],
+  ["завжди", 0, "«завжди» не змінюється."]
+];
+var FC_ITEMS = [["лісу", "f"], ["лісовий", "c"], ["лісник", "c"], ["лісом", "f"], ["лісами", "f"], ["лісовик", "c"], ["підлісок", "c"], ["лісі", "f"]];
+var ODD_SETS = [
+  { words: ["хліб", "хлібний", "хлібина", "хлопець"], odd: "хлопець", why: "У слові «хлопець» інший корінь." },
+  { words: ["ріка", "річка", "річковий", "рік"], odd: "рік", why: "«Рік» — це час, корінь у слова інший." },
+  { words: ["школа", "школяр", "шкільний", "шахи"], odd: "шахи", why: "У слові «шахи» корінь інший." },
+  { words: ["сніг", "сніжний", "снігур", "сніданок"], odd: "сніданок", why: "У слові «сніданок» корінь інший." }
+];
+var ROOTS = [
+  { root: "вод", need: 3, ref: "вода",
+    words: { "водний": "вод-н-ий", "водяний": "вод-ян-ий", "підводний": "під-вод-н-ий", "надводний": "над-вод-н-ий", "безводний": "без-вод-н-ий", "водичка": "вод-ичк-а", "водянистий": "вод-ян-ист-ий" },
+    extra: ["водолаз", "водоспад", "водопровід", "водогін", "водойма", "водяник"],
+    forms: ["вода", "води", "воді", "воду", "водою", "водами", "водам", "водах"] },
+  { root: "пис", need: 3, ref: "писати",
+    words: { "запис": "за-пис", "підпис": "під-пис", "напис": "на-пис", "опис": "о-пис", "розпис": "роз-пис", "надпис": "над-пис", "переписка": "пере-пис-к-а", "записка": "за-пис-к-а", "приписка": "при-пис-к-а", "описка": "о-пис-к-а", "розписка": "роз-пис-к-а", "підписка": "під-пис-к-а", "писанка": "пис-анк-а", "писар": "пис-ар" },
+    extra: ["писати", "записати", "підписати", "переписати", "описати", "написати", "розписати"],
+    forms: ["запису", "записи", "записом", "записку", "записки", "переписки", "переписку", "підпису", "підписи", "опису", "описи", "напису", "написи"] }
+];
+var CAP_WORDS = [
+  { w: "прибережний", parts: [["при", "p"], ["береж", "r"], ["н", "s"], ["ий", "e"]], base: ["прибережн", "береж", "при", "прибереж"], baseOk: "прибережн" },
+  { w: "переписка", parts: [["пере", "p"], ["пис", "r"], ["к", "s"], ["а", "e"]], base: ["переписк", "пис", "пере", "перепис"], baseOk: "переписк" }
+];
+
+var MISS = [];
+
+/* 1. Розріж слово */
+MISS.push({ id: "cut", title: "Розріж слово", max: 4,
+  goal: "Розріж кожне слово на частини: префікс, корінь, суфікс, закінчення. Торкайся проміжків між літерами: там з’явиться червона лінія розрізу. Ще одне натискання прибирає розріз.",
+  hint: "Спочатку змін слово й знайди закінчення. Потім добери спільнокореневе слово: корінь у них однаковий. Усе, що стоїть перед коренем, — префікс, після кореня — суфікс.",
+  make: function (box) {
+    var rows = [];
+    CUT_WORDS.forEach(function (d) {
+      var row = el("div", "cutrow"), wrap = el("div", "cutword"), cuts = {}, gaps = [];
+      row.appendChild(wrap);
+      d.w.split("").forEach(function (ch, i, arr) {
+        wrap.appendChild(el("span", "ltr", esc(ch)));
+        if (i < arr.length - 1) {
+          var g = el("button", "gap"); g.type = "button";
+          g.setAttribute("aria-label", "Розрізати слово «" + d.w + "» після літери «" + ch + "»");
+          g.setAttribute("aria-pressed", "false");
+          g.addEventListener("click", function () {
+            var pos = i + 1; cuts[pos] = !cuts[pos];
+            g.classList.toggle("on", !!cuts[pos]); g.setAttribute("aria-pressed", cuts[pos] ? "true" : "false");
+            row.classList.remove("ok", "no"); mark.textContent = "";
+          });
+          wrap.appendChild(g); gaps[i + 1] = g;
+        }
+      });
+      var mark = el("span", "rowmark"); row.appendChild(mark);
+      box.appendChild(row);
+      rows.push({ d: d, row: row, cuts: cuts, gaps: gaps, mark: mark });
+    });
+    return {
+      check: function () {
+        var ok = 0;
+        rows.forEach(function (r) {
+          var sel = Object.keys(r.cuts).filter(function (k) { return r.cuts[k]; }).map(Number).sort(function (a, b) { return a - b; });
+          var good = sel.length === r.d.cuts.length && sel.every(function (v, i) { return v === r.d.cuts[i]; });
+          r.row.classList.toggle("ok", good); r.row.classList.toggle("no", !good);
+          r.mark.textContent = good ? "✓" : "✗";
+          if (good) ok++;
+        });
+        return { score: ok, max: rows.length };
+      },
+      reveal: function () {
+        rows.forEach(function (r) {
+          r.gaps.forEach(function (g, pos) { if (!g) return; var on = r.d.cuts.indexOf(pos) >= 0; r.cuts[pos] = on; g.classList.toggle("on", on); g.setAttribute("aria-pressed", on ? "true" : "false"); });
+        });
+      }
+    };
+  } });
+
+/* 2. Розфарбуй частини */
+MISS.push({ id: "paint", title: "Розфарбуй частини", max: 4,
+  goal: "Обери фарбу, а потім торкайся частин слова: вони змінять колір. Префікс — зелений, корінь — червоний, суфікс — синій, закінчення — жовте.",
+  hint: "Корінь — спільна частина споріднених слів. Закінчення стоїть у кінці й змінюється: дорога — дорогу — дорогою. Префікс стоїть перед коренем.",
+  make: function (box) {
+    var tool = null, words = [];
+    var pal = el("div", "palette"); pal.appendChild(el("b", "", "Фарба:"));
+    var pbs = [];
+    ["p", "r", "s", "e"].forEach(function (k) {
+      var c = el("button", "chip " + k, KIND_NAME[k]); c.type = "button"; c.setAttribute("aria-pressed", "false");
+      c.addEventListener("click", function () { tool = k; pbs.forEach(function (x) { x.setAttribute("aria-pressed", "false"); }); c.setAttribute("aria-pressed", "true"); });
+      pal.appendChild(c); pbs.push(c);
+    });
+    box.appendChild(pal);
+    PAINT_WORDS.forEach(function (parts) {
+      var row = el("div", "paintrow"), pw = el("div", "paintword"), chips = [];
+      parts.forEach(function (p, i) {
+        var c = el("button", "chip", esc(p[0])); c.type = "button"; c.dataset.k = "";
+        c.addEventListener("click", function () {
+          if (!tool) { return; }
+          c.className = "chip " + tool; c.dataset.k = tool; row.classList.remove("ok", "no"); mark.textContent = "";
+        });
+        pw.appendChild(c); chips.push(c);
+      });
+      row.appendChild(pw);
+      var mark = el("span", "rowmark"); row.appendChild(mark);
+      box.appendChild(row); words.push({ parts: parts, chips: chips, row: row, mark: mark });
+    });
+    return {
+      check: function () {
+        if (!tool && words.every(function (w) { return w.chips.every(function (c) { return !c.dataset.k; }); })) return { incomplete: true, msg: "Спочатку обери фарбу вгорі й торкайся частин слова." };
+        var ok = 0;
+        words.forEach(function (w) {
+          var good = w.parts.every(function (p, i) { return w.chips[i].dataset.k === p[1]; });
+          w.row.classList.toggle("ok", good); w.row.classList.toggle("no", !good); w.mark.textContent = good ? "✓" : "✗";
+          if (good) ok++;
+        });
+        return { score: ok, max: words.length };
+      },
+      reveal: function () { words.forEach(function (w) { w.parts.forEach(function (p, i) { w.chips[i].className = "chip " + p[1]; w.chips[i].dataset.k = p[1]; }); }); }
+    };
+  } });
+
+/* 3. Основа і закінчення */
+MISS.push({ id: "end", title: "Знайди закінчення й основу", max: 5,
+  goal: "Торкнись першої літери закінчення. Закінчення стане жовтим, а основа підкреслиться фіолетовим. Під словом є підказка: так це слово змінюється.",
+  hint: "Закінчення змінюється, коли змінюємо слово. Порівняй із підказкою під словом: що в ній різне — те й закінчення.",
+  make: function (box) {
+    var rows = [];
+    END_WORDS.forEach(function (d) {
+      var row = el("div", "endrow"), wrap = el("div", "cutword"), letters = [], chosen = -1;
+      d.w.split("").forEach(function (ch, i) {
+        var b = el("button", "lt", esc(ch)); b.type = "button";
+        b.setAttribute("aria-label", "Закінчення починається з літери «" + ch + "»");
+        b.addEventListener("click", function () { r.chosen = i; paintLetters(r); row.classList.remove("ok", "no"); mark.textContent = ""; });
+        wrap.appendChild(b); letters.push(b);
+      });
+      row.appendChild(wrap);
+      var mark = el("span", "rowmark"); row.appendChild(mark);
+      row.appendChild(el("span", "tip", "Підказка: " + esc(d.tip)));
+      var r = { d: d, letters: letters, chosen: chosen, row: row, mark: mark };
+      box.appendChild(row); rows.push(r);
+    });
+    function paintLetters(r) {
+      r.letters.forEach(function (b, i) {
+        var isEnd = r.chosen >= 0 && i >= r.chosen, isBase = r.chosen >= 0 && i < r.chosen;
+        b.classList.toggle("e", isEnd); b.classList.toggle("b", isBase);
+      });
+    }
+    return {
+      check: function () {
+        if (rows.some(function (r) { return r.chosen < 0; })) return { incomplete: true, msg: "Познач закінчення в кожному слові." };
+        var ok = 0;
+        rows.forEach(function (r) {
+          var good = r.chosen === r.d.at;
+          r.row.classList.toggle("ok", good); r.row.classList.toggle("no", !good);
+          r.mark.textContent = good ? "✓ основа: " + r.d.w.slice(0, r.d.at) : "✗";
+          if (good) ok++;
+        });
+        return { score: ok, max: rows.length };
+      },
+      reveal: function () { rows.forEach(function (r) { r.chosen = r.d.at; paintLetters(r); }); }
+    };
+  } });
+
+/* 4. Змінні чи незмінні */
+MISS.push({ id: "chg", title: "Змінні чи незмінні", max: 12, game: true,
+  goal: "Тобі показують слово. Вирішуй: воно змінюється (має закінчення) чи не змінюється? Усього 12 карток. Після кожної відповіді побачиш пояснення.",
+  hint: "Спробуй мовчки змінити слово: поставити його в іншу форму. Якщо вийшло — слово змінне.",
+  make: function (box, api) {
+    var order = shuffle(CARDS), i = 0, score = 0;
+    var wrap = el("div", "cardgame"); box.appendChild(wrap);
+    function draw() {
+      wrap.innerHTML = "";
+      if (i >= order.length) {
+        wrap.appendChild(el("p", "", "Готово! Правильних відповідей: <b>" + score + " з " + order.length + "</b>."));
+        var again = btn("Зіграти ще раз", "primary");
+        again.addEventListener("click", function () { order = shuffle(CARDS); i = 0; score = 0; draw(); });
+        wrap.appendChild(again); api.report(score, order.length); return;
+      }
+      var c = order[i];
+      wrap.appendChild(el("p", "muted", "Картка " + (i + 1) + " з " + order.length));
+      wrap.appendChild(el("div", "bigcard", esc(c[0])));
+      var row = el("div", "row2"), b1 = btn("Змінне", "primary"), b2 = btn("Незмінне", "primary");
+      row.appendChild(b1); row.appendChild(b2); wrap.appendChild(row);
+      var f = el("p", "fb"); wrap.appendChild(f);
+      var next = btn(i === order.length - 1 ? "Показати результат" : "Далі", "primary"); next.hidden = true; wrap.appendChild(next);
+      function answer(v) {
+        b1.disabled = b2.disabled = true;
+        var good = (v === c[1]);
+        if (good) score++;
+        setFb(f, (good ? "Правильно! " : "Не зовсім. ") + esc(c[2]), good ? "ok" : "bad");
+        next.hidden = false; next.focus();
+      }
+      b1.addEventListener("click", function () { answer(1); });
+      b2.addEventListener("click", function () { answer(0); });
+      next.addEventListener("click", function () { i++; draw(); });
+    }
+    draw();
+    return { noCheck: true };
+  } });
+
+/* 5. Форма чи спільнокореневе */
+MISS.push({ id: "fc", title: "Форма слова чи нове слово", max: 8,
+  goal: "Слово-орієнтир — «ліс». Для кожного слова вирішуй: це <b>форма слова «ліс»</b> (те саме значення, інше закінчення) чи <b>спільнокореневе слово</b> (нове слово з іншим значенням).",
+  hint: "Форма слова — це те саме слово: «ліс» у різних відмінках. Спільнокореневе слово називає щось нове: лісовий — це вже ознака, лісник — людина.",
+  make: function (box) {
+    box.appendChild(el("p", "", "Слово-орієнтир: " + mw([["ліс", "r"]])));
+    var items = shuffle(FC_ITEMS), rows = [];
+    items.forEach(function (it) {
+      var row = el("div", "fcrow"); row.appendChild(el("span", "fcw", esc(it[0])));
+      var seg = el("span", "seg"), bf = btn("Форма слова", "opt"), bc = btn("Спільнокореневе слово", "opt");
+      var r = { it: it, ans: "", row: row, bf: bf, bc: bc };
+      function pick(v) { r.ans = v; bf.setAttribute("aria-pressed", v === "f" ? "true" : "false"); bc.setAttribute("aria-pressed", v === "c" ? "true" : "false"); row.classList.remove("ok", "no"); }
+      bf.setAttribute("aria-pressed", "false"); bc.setAttribute("aria-pressed", "false");
+      bf.addEventListener("click", function () { pick("f"); }); bc.addEventListener("click", function () { pick("c"); });
+      r.pick = pick;
+      seg.appendChild(bf); seg.appendChild(bc); row.appendChild(seg); box.appendChild(row); rows.push(r);
+    });
+    return {
+      check: function () {
+        if (rows.some(function (r) { return !r.ans; })) return { incomplete: true, msg: "Відповідь потрібна в кожному рядку." };
+        var ok = 0;
+        rows.forEach(function (r) { var good = r.ans === r.it[1]; r.row.classList.toggle("ok", good); r.row.classList.toggle("no", !good); if (good) ok++; });
+        return { score: ok, max: rows.length };
+      },
+      reveal: function () { rows.forEach(function (r) { r.pick(r.it[1]); }); }
+    };
+  } });
+
+/* 6. Знайди зайве */
+MISS.push({ id: "odd", title: "Знайди зайве слово", max: 4,
+  goal: "У кожному рядку одне слово не має спільного кореня з іншими. Торкнись його.",
+  hint: "Добери до кожного слова ще одне споріднене й порівняй кореневу частину. Зайве слово має інше значення в корені.",
+  make: function (box) {
+    var rows = [];
+    ODD_SETS.forEach(function (s) {
+      var row = el("div", "oddrow"), g = el("div", "oddopts"), r = { s: s, ans: "", btns: [], row: row };
+      shuffle(s.words).forEach(function (w) {
+        var b = btn(w, "opt"); b.setAttribute("aria-pressed", "false"); b.style.fontSize = "20px";
+        b.addEventListener("click", function () { r.pick(w); });
+        g.appendChild(b); r.btns.push([w, b]);
+      });
+      r.pick = function (w) { r.ans = w; r.btns.forEach(function (x) { x[1].setAttribute("aria-pressed", x[0] === w ? "true" : "false"); }); row.classList.remove("ok", "no"); };
+      row.appendChild(g); var note = el("span", "tip"); r.note = note; row.appendChild(note);
+      box.appendChild(row); rows.push(r);
+    });
+    return {
+      check: function () {
+        if (rows.some(function (r) { return !r.ans; })) return { incomplete: true, msg: "Обери зайве слово в кожному рядку." };
+        var ok = 0;
+        rows.forEach(function (r) { var good = r.ans === r.s.odd; r.row.classList.toggle("ok", good); r.row.classList.toggle("no", !good); r.note.textContent = good ? r.s.why : ""; if (good) ok++; });
+        return { score: ok, max: rows.length };
+      },
+      reveal: function () { rows.forEach(function (r) { r.pick(r.s.odd); r.note.textContent = r.s.why; }); }
+    };
+  } });
+
+/* 7. Утвори слова */
+MISS.push({ id: "make", title: "Утвори нові слова", max: 6,
+  goal: "Утвори якнайбільше <b>нових слів</b> зі спільним коренем. Для кожного кореня потрібно хоча б три слова. Форми одного слова (вода — води) не рахуються. Пиши слово й натискай «Додати» або Enter.",
+  hint: "До кореня можна додавати префікси (під-, над-, без-, за-) і суфікси. Перевір, що в усіх слів однаковий корінь і значення різне.",
+  make: function (box) {
+    var blocks = [];
+    ROOTS.forEach(function (R) {
+      var blk = el("div", "rootblk");
+      blk.appendChild(el("p", "", "<b>Корінь:</b> " + mw([[R.root, "r"]], false, true) + " потрібно слів: " + R.need));
+      var row = el("div", "addrow"), inp = document.createElement("input");
+      inp.type = "text"; inp.autocomplete = "off"; inp.spellcheck = false; inp.setAttribute("autocapitalize", "none"); inp.placeholder = "Напиши слово з коренем «" + R.root + "»"; inp.setAttribute("aria-label", "Слово з коренем " + R.root);
+      var add = btn("Додати", "primary");
+      row.appendChild(inp); row.appendChild(add); blk.appendChild(row);
+      var found = el("div", "found"), f = el("p", "fb");
+      blk.appendChild(found); blk.appendChild(f); box.appendChild(blk);
+      var data = { R: R, got: [] };
+      function submit() {
+        var v = inp.value.trim().toLowerCase(); inp.value = "";
+        if (!v) return;
+        if (data.got.indexOf(v) >= 0) { setFb(f, "Це слово вже є в списку.", "warn"); return; }
+        if (R.words[v]) {
+          data.got.push(v);
+          var c = el("span", "chip", esc(v) + ' <span class="muted" style="font-size:14px;font-weight:600">(' + esc(R.words[v]) + ")</span>"); c.style.background = "var(--ok-bg)";
+          found.appendChild(c); setFb(f, "Добре! Слово «" + esc(v) + "» розбирається так: " + esc(R.words[v]) + ".", "ok");
+        } else if (R.extra.indexOf(v) >= 0) {
+          data.got.push(v);
+          var c2 = el("span", "chip", esc(v)); c2.style.background = "var(--ok-bg)"; found.appendChild(c2);
+          setFb(f, "Гарне слово! Воно має корінь «" + R.root + "». Його розбір складніший, ми зробимо його пізніше.", "ok");
+          data.extraCount = (data.extraCount || 0);
+        } else if (R.forms.indexOf(v) >= 0) {
+          setFb(f, "«" + esc(v) + "» — це форма слова, яке вже є (змінилося закінчення). Потрібне нове слово.", "bad");
+        } else {
+          setFb(f, "Не впевнений, що таке слово підходить. Перевір: є в ньому корінь «" + R.root + "» і чи це нове слово, а не нова форма.", "warn");
+        }
+      }
+      add.addEventListener("click", submit);
+      inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+      blocks.push(data);
+    });
+    return {
+      check: function () {
+        var sc = 0, mx = 0;
+        blocks.forEach(function (b) { sc += Math.min(b.R.need, b.got.length); mx += b.R.need; });
+        return { score: sc, max: mx };
+      }
+    };
+  } });
+
+/* 8. Повний розбір */
+MISS.push({ id: "cap", title: "Розбір слова", max: 12,
+  goal: "Зроби повний розбір кожного слова: назви кожну частину, знайди основу й визнач, чи слово змінне. Обирай відповіді у списках.",
+  hint: "Іди за схемою: закінчення, основа, корінь, префікс і суфікс. Основа — це слово без закінчення.",
+  make: function (box) {
+    var rows = [];
+    CAP_WORDS.forEach(function (d) {
+      var row = el("div", "caprow"), cols = el("div", "capcols"), selects = [];
+      d.parts.forEach(function (p) {
+        var col = el("div", "capcol"); col.appendChild(el("span", "chip", esc(p[0])));
+        var s = document.createElement("select"); s.className = "sel"; s.setAttribute("aria-label", "Що таке частина «" + p[0] + "»");
+        [["", "— обери —"], ["p", "префікс"], ["r", "корінь"], ["s", "суфікс"], ["e", "закінчення"]].forEach(function (o) { var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; s.appendChild(op); });
+        s.addEventListener("change", function () { row.classList.remove("ok", "no"); });
+        col.appendChild(s); cols.appendChild(col); selects.push(s);
+      });
+      row.appendChild(cols);
+      var extra = el("div", "capextra");
+      var lb = el("label", "", "Основа слова «" + esc(d.w) + "»: "), sb = document.createElement("select"); sb.className = "sel";
+      [""].concat(shuffle(d.base)).forEach(function (v) { var op = document.createElement("option"); op.value = v; op.textContent = v || "— обери —"; sb.appendChild(op); });
+      lb.appendChild(sb); extra.appendChild(lb);
+      var lc = el("label", "", "Слово: "), sc = document.createElement("select"); sc.className = "sel";
+      [["", "— обери —"], ["змінне", "змінне"], ["незмінне", "незмінне"]].forEach(function (o) { var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; sc.appendChild(op); });
+      lc.appendChild(sc); extra.appendChild(lc);
+      row.appendChild(extra);
+      var mark = el("span", "rowmark"); row.appendChild(mark);
+      box.appendChild(el("p", "", "<b>Слово:</b> «" + esc(d.w) + "»"));
+      box.appendChild(row); rows.push({ d: d, selects: selects, sb: sb, sc: sc, row: row, mark: mark });
+    });
+    return {
+      check: function () {
+        var incomplete = rows.some(function (r) { return r.selects.some(function (s) { return !s.value; }) || !r.sb.value || !r.sc.value; });
+        if (incomplete) return { incomplete: true, msg: "Заповни всі списки." };
+        var sc = 0, mx = 0;
+        rows.forEach(function (r) {
+          var rowOk = 0, rowMax = r.selects.length + 2;
+          r.selects.forEach(function (s, i) { if (s.value === r.d.parts[i][1]) rowOk++; });
+          if (r.sb.value === r.d.baseOk) rowOk++;
+          if (r.sc.value === "змінне") rowOk++;
+          sc += rowOk; mx += rowMax;
+          r.row.classList.toggle("ok", rowOk === rowMax); r.row.classList.toggle("no", rowOk !== rowMax);
+          r.mark.textContent = rowOk + " з " + rowMax;
+        });
+        return { score: sc, max: mx };
+      },
+      reveal: function () { rows.forEach(function (r) { r.selects.forEach(function (s, i) { s.value = r.d.parts[i][1]; }); r.sb.value = r.d.baseOk; r.sc.value = "змінне"; }); }
+    };
+  } });
+
+var curMission = -1;
+function practiceInit() {
+  var list = $("#mlist");
+  if (!list.children.length) {
+    MISS.forEach(function (m, i) {
+      var b = el("button", "mitem"); b.type = "button";
+      b.innerHTML = '<span class="n">' + (i + 1) + '</span><span class="t">' + esc(m.title) + '</span><span class="st"></span>';
+      b.addEventListener("click", function () { renderMission(i); });
+      list.appendChild(b);
+    });
+    refreshBadges();
+  }
+  if (curMission < 0) renderMission(0);
+}
+function refreshBadges() {
+  var items = $$("#mlist .mitem");
+  items.forEach(function (b, i) {
+    var m = MISS[i], best = state.best[m.id];
+    b.classList.toggle("done", !!best && best.s >= m.max);
+    $(".st", b).textContent = best ? best.s + "/" + m.max : "";
+  });
+}
+function renderMission(i) {
+  curMission = i;
+  var m = MISS[i], box = $("#mission");
+  $$("#mlist .mitem").forEach(function (b, j) { b.setAttribute("aria-current", j === i ? "true" : "false"); });
+  box.innerHTML = "";
+  box.appendChild(el("h3", "", (i + 1) + ". " + esc(m.title)));
+  box.appendChild(el("p", "goal", "<b>Що робити.</b> " + m.goal));
+  var task = el("div", "task"); box.appendChild(task);
+  var ctr = el("div", "mctrl"), chk = btn("Перевірити", "primary"), rst = btn("Спробувати ще"), hnt = btn("Підказка"), rev = btn("Показати відповідь");
+  rev.hidden = true;
+  var fb = el("p", "fb"); fb.setAttribute("role", "status");
+  var hb = el("p", "hintbox"); hb.hidden = true; hb.innerHTML = "<b>Підказка.</b> " + m.hint;
+  var fails = 0, locked = false, impl;
+  function build() {
+    task.innerHTML = ""; fails = 0; locked = false; rev.hidden = true; setFb(fb, "", ""); chk.disabled = false;
+    impl = m.make(task, { report: function (s, mx) { setBest(m.id, s, mx); } });
+    if (impl.noCheck) { chk.hidden = true; rst.hidden = true; } else { chk.hidden = false; rst.hidden = false; }
+    if (!impl.reveal) rev.hidden = true;
+  }
+  ctr.appendChild(chk); ctr.appendChild(rst); ctr.appendChild(hnt); ctr.appendChild(rev);
+  box.appendChild(ctr); box.appendChild(fb); box.appendChild(hb);
+  chk.addEventListener("click", function () {
+    if (locked) return;
+    var r = impl.check();
+    if (r.incomplete) { setFb(fb, r.msg, "warn"); return; }
+    setBest(m.id, r.score, r.max);
+    if (r.score >= r.max) setFb(fb, "Чудово! Усе правильно: " + r.score + " з " + r.max + ".", "ok");
+    else {
+      fails++;
+      setFb(fb, "Правильно: " + r.score + " з " + r.max + ". Рядки з позначкою ✗ чи червоною рамкою перевір ще раз.", "bad");
+      if (fails >= 3 && impl.reveal) rev.hidden = false;
+    }
+  });
+  rst.addEventListener("click", build);
+  hnt.addEventListener("click", function () { hb.hidden = !hb.hidden; });
+  rev.addEventListener("click", function () {
+    impl.reveal(); locked = true; chk.disabled = true; rev.hidden = true;
+    setFb(fb, "Ось правильні відповіді. Натисни «Спробувати ще», щоб пройти завдання знову. Результат цієї спроби не зараховується.", "warn");
+  });
+  build();
+}
+
+/* =============================================================
+   3D-рушій (three.js r128)
+============================================================= */
+var COLORS = { p: 0x12A06F, r: 0xE04A2F, s: 0x2F6BE0, e: 0xF2B01E };
+var LABEL_INK = { p: "#ffffff", r: "#ffffff", s: "#ffffff", e: "#16224A" };
+var BH = 1.1, BD = 0.9, BR = 0.16, BEV = 0.05;
+var geoCache = {}, studGeo = null, measureCtx = null;
+
+function rrect(w, h, r) {
+  var s = new T.Shape(), x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+function bodyGeo(w) {
+  var key = w.toFixed(2);
+  if (geoCache[key]) return geoCache[key];
+  var g = new T.ExtrudeGeometry(rrect(w - 2 * BEV, BH - 2 * BEV, BR), { depth: BD - 2 * BEV, bevelEnabled: true, bevelThickness: BEV, bevelSize: BEV, bevelSegments: 2, curveSegments: 5 });
+  g.translate(0, 0, -(BD - 2 * BEV) / 2);
+  geoCache[key] = g; return g;
+}
+function brickWidth(text) {
+  if (!measureCtx) { measureCtx = document.createElement("canvas").getContext("2d"); }
+  measureCtx.font = "800 100px Nunito,'Segoe UI',Arial,sans-serif";
+  var units = measureCtx.measureText(text).width / 100 * (BH * 0.58);
+  return Math.max(1.25, units + 0.7);
+}
+function labelTex(text, kind, w) {
+  var cw = Math.round(w * 140), ch = Math.round(BH * 140), c = document.createElement("canvas");
+  c.width = cw; c.height = ch;
+  var x = c.getContext("2d"), fs = ch * 0.58;
+  x.font = "800 " + fs + "px Nunito,'Segoe UI',Arial,sans-serif"; x.textAlign = "center"; x.textBaseline = "middle";
+  x.fillStyle = LABEL_INK[kind] || "#ffffff"; x.fillText(text, cw / 2, ch / 2 + fs * 0.05);
+  var t = new T.CanvasTexture(c); t.anisotropy = 4; return t;
+}
+function plainLabel(text, color, wUnits, hUnits) {
+  var cw = Math.round(wUnits * 140), ch = Math.round(hUnits * 140), c = document.createElement("canvas");
+  c.width = cw; c.height = ch;
+  var x = c.getContext("2d"), fs = ch * 0.7;
+  x.font = "800 " + fs + "px Nunito,'Segoe UI',Arial,sans-serif"; x.textAlign = "center"; x.textBaseline = "middle";
+  x.fillStyle = color; x.fillText(text, cw / 2, ch / 2);
+  return new T.CanvasTexture(c);
+}
+function makeBrick(text, kind) {
+  var w = brickWidth(text), g = new T.Group();
+  var mat = new T.MeshPhongMaterial({ color: COLORS[kind] || 0x9AA6C4, shininess: 45 });
+  var body = new T.Mesh(bodyGeo(w), mat); g.add(body);
+  var tex = labelTex(text, kind, w);
+  var lm = new T.MeshBasicMaterial({ map: tex, transparent: true });
+  var plane = new T.Mesh(new T.PlaneGeometry(w - 0.1, BH - 0.1), lm); plane.position.z = BD / 2 + 0.012; g.add(plane);
+  if (!studGeo) studGeo = new T.CylinderGeometry(0.2, 0.2, 0.14, 20);
+  var n = Math.max(1, Math.round((w - 0.3) / 0.85)), sp = w / n;
+  for (var i = 0; i < n; i++) { var st = new T.Mesh(studGeo, mat); st.position.set(-w / 2 + sp * (i + 0.5), BH / 2 + 0.06, 0); g.add(st); }
+  var b = { group: g, body: body, mat: mat, tex: tex, lm: lm, plane: plane, text: text, kind: kind, w: w, tx: 0, ty: 0, cx: 0, cy: 0, hop: -1, shake: -1, drop: 0, flip: -1, sel: false };
+  body.userData.brick = b;
+  return b;
+}
+function disposeBrick(b) { try { b.tex.dispose(); b.lm.dispose(); b.mat.dispose(); b.plane.geometry.dispose(); } catch (e) { /* ok */ } }
+
+var stages = [], rafId = 0, lastTs = 0;
+function loop(ts) {
+  var dt = Math.min(0.05, ((ts - lastTs) / 1000) || 0.016); lastTs = ts;
+  for (var i = 0; i < stages.length; i++) { var s = stages[i]; if (s.visible) { s.resize(); s.tick(dt); } }
+  rafId = requestAnimationFrame(loop);
+}
+
+function Stage(canvas, opt) {
+  this.canvas = canvas; this.opt = opt || {}; this.ok = false;
+  if (!T) return;
+  try { this.renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: "low-power" }); } catch (e) { return; }
+  var r = this.renderer;
+  r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); r.setClearColor(0x000000, 0);
+  this.scene = new T.Scene(); this.camera = new T.PerspectiveCamera(32, 1, 0.1, 100);
+  this.scene.add(new T.AmbientLight(0xffffff, 0.8));
+  var d1 = new T.DirectionalLight(0xffffff, 0.75); d1.position.set(3, 6, 9); this.scene.add(d1);
+  var d2 = new T.DirectionalLight(0xbfd0ff, 0.35); d2.position.set(-6, 2, 4); this.scene.add(d2);
+  this.root = new T.Group(); this.scene.add(this.root);
+  this.content = new T.Group(); this.root.add(this.content);
+  this.bricks = []; this.rotX = 0; this.rotY = 0; this.tX = 0; this.tY = 0; this.drag = null;
+  this.visible = true; this.time = 0; this.gap = 0.14; this.view = { w: 6, h: this.opt.h || 2.8 };
+  this.ray = new T.Raycaster(); this.baseOn = false;
+  if (this.opt.shadow !== false) {
+    var c = document.createElement("canvas"); c.width = c.height = 128; var x = c.getContext("2d");
+    var gr = x.createRadialGradient(64, 64, 4, 64, 64, 62); gr.addColorStop(0, "rgba(10,20,60,0.35)"); gr.addColorStop(1, "rgba(10,20,60,0)");
+    x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
+    this.shadow = new T.Mesh(new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({ map: new T.CanvasTexture(c), transparent: true, depthWrite: false }));
+    this.shadow.rotation.x = -Math.PI / 2; this.shadow.position.y = -BH / 2 - 0.55; this.root.add(this.shadow);
+  }
+  this.ok = true; stages.push(this); this.bind(); this.resize();
+  var self = this;
+  if (window.IntersectionObserver) { new IntersectionObserver(function (es) { self.visible = es[0].isIntersecting; }).observe(canvas); }
+  if (!rafId) rafId = requestAnimationFrame(loop);
+}
+Stage.prototype.resize = function () {
+  var c = this.canvas, w = c.clientWidth, h = c.clientHeight;
+  if (!w || !h || (w === this.w && h === this.h)) return;
+  this.w = w; this.h = h; this.renderer.setSize(w, h, false);
+  this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); this.fit();
+};
+Stage.prototype.fit = function () {
+  var fov = this.camera.fov * Math.PI / 180, hf = 2 * Math.atan(Math.tan(fov / 2) * this.camera.aspect);
+  var dW = (this.view.w * 1.2) / (2 * Math.tan(hf / 2)), dH = (this.view.h * 1.25) / (2 * Math.tan(fov / 2));
+  var d = Math.max(dW, dH, 6);
+  this.camera.position.set(0, d * 0.1, d); this.camera.lookAt(0, 0, 0);
+};
+Stage.prototype.bind = function () {
+  var self = this, c = this.canvas;
+  c.style.cursor = "grab";
+  c.addEventListener("pointerdown", function (e) {
+    self.drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: false, id: e.pointerId };
+    try { c.setPointerCapture(e.pointerId); } catch (_) { /* ok */ }
+    c.style.cursor = "grabbing";
+  });
+  c.addEventListener("pointermove", function (e) {
+    var d = self.drag; if (!d || e.pointerId !== d.id) return;
+    var dx = e.clientX - d.x, dy = e.clientY - d.y; d.x = e.clientX; d.y = e.clientY;
+    if (Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) > 6) d.moved = true;
+    self.tY = clamp(self.tY + dx * 0.012, -1.25, 1.25); self.tX = clamp(self.tX + dy * 0.008, -0.45, 0.45);
+  });
+  function end(e, cancel) { var d = self.drag; if (!d) return; self.drag = null; c.style.cursor = "grab"; if (!cancel && !d.moved) self.pick(e.clientX, e.clientY); }
+  c.addEventListener("pointerup", function (e) { end(e, false); });
+  c.addEventListener("pointercancel", function (e) { end(e, true); });
+};
+Stage.prototype.pick = function (cx, cy) {
+  var r = this.canvas.getBoundingClientRect();
+  var ndc = { x: ((cx - r.left) / r.width) * 2 - 1, y: -((cy - r.top) / r.height) * 2 + 1 };
+  this.ray.setFromCamera(ndc, this.camera);
+  var hits = this.ray.intersectObjects(this.bricks.map(function (b) { return b.body; }), false);
+  if (hits.length && this.opt.onPick) this.opt.onPick(hits[0].object.userData.brick);
+};
+Stage.prototype.tick = function (dt) {
+  this.time += dt;
+  var k = REDUCE ? 1 : Math.min(1, dt * 10);
+  if (!this.drag) { var rk = REDUCE ? 1 : Math.min(1, dt * 2.2); this.tY += (0 - this.tY) * rk; this.tX += (0 - this.tX) * rk; }
+  var wob = (this.opt.wobble && !this.drag && !REDUCE) ? Math.sin(this.time * 0.8) * 0.3 : 0;
+  this.rotY += (this.tY + wob - this.rotY) * k; this.rotX += (this.tX - this.rotX) * k;
+  this.root.rotation.set(this.rotX, this.rotY, 0);
+  for (var i = 0; i < this.bricks.length; i++) {
+    var b = this.bricks[i], g = b.group, ox = 0, oy = 0;
+    b.cx += (b.tx - b.cx) * k; b.cy += (b.ty - b.cy) * k;
+    if (b.hop >= 0) { b.hop += dt / 0.55; if (b.hop >= 1) b.hop = -1; else oy += Math.sin(Math.PI * b.hop) * 0.7; }
+    if (b.shake >= 0) { b.shake += dt / 0.5; if (b.shake >= 1) b.shake = -1; else ox += Math.sin(b.shake * 38) * 0.14 * (1 - b.shake); }
+    if (b.drop > 0) { b.drop *= Math.exp(-dt * 8); if (b.drop < 0.01) b.drop = 0; oy += b.drop; }
+    if (b.flip >= 0) { b.flip += dt / 0.4; if (b.flip >= 1) { b.flip = -1; g.rotation.x = 0; } else g.rotation.x = (1 - b.flip) * -1.4; }
+    g.position.set(b.cx + ox, b.cy + oy, 0);
+    var ts = b.sel ? 1.1 : 1; g.scale.setScalar(g.scale.x + (ts - g.scale.x) * k);
+  }
+  this.renderer.render(this.scene, this.camera);
+};
+Stage.prototype.clear = function () {
+  this.bricks.forEach(function (b) { this.content.remove(b.group); disposeBrick(b); }, this);
+  this.bricks = [];
+  if (this.rootCol) { this.content.remove(this.rootCol); this.rootCol = null; }
+};
+Stage.prototype.layout = function (immediate) {
+  var bs = this.bricks, g = this.gap, total = 0, i;
+  for (i = 0; i < bs.length; i++) total += bs[i].w;
+  total += g * Math.max(0, bs.length - 1);
+  var x = -total / 2;
+  for (i = 0; i < bs.length; i++) { bs[i].tx = x + bs[i].w / 2; bs[i].ty = 0; x += bs[i].w + g; if (immediate) { bs[i].cx = bs[i].tx; bs[i].cy = 0; } }
+  this.total = total;
+  this.view.w = Math.max(total, this.opt.minW || 6);
+  if (this.shadow) this.shadow.scale.set(Math.max(total * 1.25, 3), 2.4, 1);
+  this.updateBase(); this.fit();
+};
+Stage.prototype.setRow = function (parts) {
+  this.clear();
+  parts.forEach(function (p) { var b = makeBrick(p[0], p[1]); this.content.add(b.group); this.bricks.push(b); }, this);
+  this.layout(true);
+  this.bricks.forEach(function (b) { b.group.position.set(b.cx, b.cy, 0); });
+};
+Stage.prototype.addBrick = function (text, kind) {
+  var b = makeBrick(text, kind); this.content.add(b.group); this.bricks.push(b);
+  this.layout(false); b.cx = b.tx; b.cy = 0; if (!REDUCE) b.drop = 3.2; return b;
+};
+Stage.prototype.removeBrick = function (i) {
+  var b = this.bricks[i]; if (!b) return;
+  this.content.remove(b.group); disposeBrick(b); this.bricks.splice(i, 1); this.layout(false);
+};
+Stage.prototype.replaceBrick = function (i, text, kind) {
+  var old = this.bricks[i]; if (!old) return;
+  var nb = makeBrick(text, kind); nb.cx = old.cx; nb.cy = old.cy;
+  this.content.remove(old.group); disposeBrick(old);
+  this.content.add(nb.group); this.bricks[i] = nb; this.layout(false);
+  nb.cx = nb.tx; if (!REDUCE) nb.flip = 0;
+};
+Stage.prototype.select = function (i) {
+  this.bricks.forEach(function (b, bi) { b.sel = (bi === i); });
+  if (this.bricks[i]) this.bricks[i].hop = 0;
+};
+Stage.prototype.celebrate = function () { this.bricks.forEach(function (b, i) { b.hop = -i * 0.12; }); };
+Stage.prototype.shakeAll = function () { this.bricks.forEach(function (b) { b.shake = 0; }); };
+Stage.prototype.showBase = function (on) {
+  this.baseOn = on;
+  if (!this.baseMesh) {
+    var m = new T.Mesh(new T.BoxGeometry(1, 0.16, 0.34), new T.MeshPhongMaterial({ color: 0x7B4FD6 }));
+    var lbl = new T.Mesh(new T.PlaneGeometry(1.7, 0.55), new T.MeshBasicMaterial({ map: plainLabel("основа", "#7B4FD6", 1.7, 0.55), transparent: true }));
+    lbl.position.set(0, 0.42, 0); this.baseLabel = lbl;
+    var grp = new T.Group(); grp.add(m); grp.add(lbl); this.baseMesh = m; this.baseGroup = grp; this.content.add(grp);
+  }
+  this.baseGroup.visible = on; this.updateBase();
+};
+Stage.prototype.updateBase = function () {
+  if (!this.baseGroup) return;
+  var n = this.bricks.length;
+  if (!this.baseOn || n < 2) { this.baseGroup.visible = false; return; }
+  var width = 0, i; for (i = 0; i < n - 1; i++) width += this.bricks[i].w; width += this.gap * (n - 2);
+  var left = -this.total / 2;
+  this.baseGroup.visible = true;
+  this.baseGroup.position.set(left + width / 2, BH / 2 + 0.55, 0);
+  this.baseMesh.scale.x = width;
+};
+/* вежа слів: корені стоять один над одним */
+Stage.prototype.setRows = function (rows) {
+  this.clear();
+  var RH = 1.4, n = rows.length, minX = 1e9, maxX = -1e9, rootW = 0;
+  rows.forEach(function (parts, ri) {
+    var y = ((n - 1) / 2 - ri) * RH, made = parts.map(function (p, pi) { var b = makeBrick(p[0], p[1]); b.row = ri; b.idx = pi; return b; });
+    var rIdx = 0; parts.forEach(function (p, pi) { if (p[1] === "r") rIdx = pi; });
+    var rb = made[rIdx]; rootW = rb.w; rb.tx = 0; rb.ty = y;
+    var g = this.gap, x = -rb.w / 2 - g, pi;
+    for (pi = rIdx - 1; pi >= 0; pi--) { made[pi].tx = x - made[pi].w / 2; x -= made[pi].w + g; made[pi].ty = y; }
+    x = rb.w / 2 + g;
+    for (pi = rIdx + 1; pi < made.length; pi++) { made[pi].tx = x + made[pi].w / 2; x += made[pi].w + g; made[pi].ty = y; }
+    made.forEach(function (b) { minX = Math.min(minX, b.tx - b.w / 2); maxX = Math.max(maxX, b.tx + b.w / 2); b.cx = b.tx; b.cy = b.ty; this.content.add(b.group); this.bricks.push(b); b.group.position.set(b.cx, b.cy, 0); }, this);
+  }, this);
+  this.content.position.x = -(minX + maxX) / 2;
+  var col = new T.Mesh(new T.BoxGeometry(rootW + 0.3, n * RH, BD + 0.5), new T.MeshBasicMaterial({ color: COLORS.r, transparent: true, opacity: 0.2, depthWrite: false }));
+  col.visible = false; this.content.add(col); this.rootCol = col;
+  this.view.w = maxX - minX; this.view.h = n * RH; this.fit();
+};
+Stage.prototype.rootFocus = function (on) {
+  if (this.rootCol) this.rootCol.visible = on;
+  this.bricks.forEach(function (b) { b.mat.color.setHex(on && b.kind !== "r" ? 0xC4CBE0 : (COLORS[b.kind] || 0x9AA6C4)); });
+};
+Stage.prototype.selectRow = function (ri) {
+  this.bricks.forEach(function (b) { b.sel = (b.row === ri); if (b.row === ri) b.hop = 0; });
+};
+
+function fontsReady() {
+  return new Promise(function (res) {
+    var done = false; function fin() { if (!done) { done = true; res(); } }
+    setTimeout(fin, 1800);
+    try {
+      if (document.fonts && document.fonts.load) Promise.all([document.fonts.load("800 40px Nunito"), document.fonts.load("400 40px 'Marck Script'")]).then(fin, fin);
+      else fin();
+    } catch (e) { fin(); }
+  });
+}
+function noGL(stageBox, text) {
+  var c = $("canvas", stageBox); if (c) c.style.display = "none";
+  stageBox.appendChild(el("div", "nogl", text));
+}
+
+/* =============================================================
+   Герой-сцена
+============================================================= */
+var heroStage = null, heroWord = 0;
+function initHero() {
+  var box = $("#hero-stage");
+  opts($("#hero-pick"), HERO_WORDS.map(function (w, i) { return [i, w.w]; }), function (i) { showHero(i); }, false);
+  try { heroStage = new Stage($("#c-hero"), { wobble: true, onPick: function (b) { heroSelect(heroStage.bricks.indexOf(b)); }, h: 3.3, minW: 7 }); } catch (e) { heroStage = null; }
+  if (!heroStage || !heroStage.ok) { heroStage = null; noGL(box, "3D-модель не завантажилась. Усі завдання працюють і без неї: обирай слово нижче й торкайся частин."); }
+  var first = $("#hero-pick .btn"); if (first) first.click();
+}
+function showHero(i) {
+  heroWord = i;
+  var w = HERO_WORDS[i], chips = $("#hero-chips");
+  chips.innerHTML = "";
+  w.parts.forEach(function (p, pi) {
+    var c = el("button", "chip " + p[1], esc(p[0])); c.type = "button"; c.setAttribute("aria-label", p[0] + " — " + KIND_NAME[p[1]]);
+    c.addEventListener("click", function () { heroSelect(pi); });
+    chips.appendChild(c);
+  });
+  $("#hero-cap").innerHTML = "<b>" + esc(w.w) + "</b> — " + esc(w.m) + ". Торкнись цеглинки або кольорової плашки.";
+  if (heroStage) heroStage.setRow(w.parts);
+}
+function heroSelect(pi) {
+  if (pi < 0) return;
+  var w = HERO_WORDS[heroWord], p = w.parts[pi];
+  $$("#hero-chips .chip").forEach(function (c, i) { c.classList.toggle("sel", i === pi); });
+  $("#hero-cap").innerHTML = "<b>" + esc(p[0]) + "</b> — " + KIND_NAME[p[1]] + ". " + esc(KIND_TEXT[p[1]]);
+  if (heroStage) heroStage.select(pi);
+}
+
+/* =============================================================
+   ЛАБОРАТОРІЯ
+============================================================= */
+var labReady = false;
+var KIND_OF = { "під": "p", "над": "p", "без": "p", "при": "p", "пере": "p", "за": "p", "вод": "r", "ліс": "r", "зим": "r", "річ": "r", "хмар": "r", "береж": "r", "пис": "r", "н": "s", "ов": "s", "к": "s", "ий": "e", "а": "e" };
+var L1 = [
+  { clue: "Розташований під водою.", target: ["під", "вод", "н", "ий"], tray: ["під", "над", "вод", "ліс", "н", "ов", "ий", "а"], hint: "Корінь — «вод». Яка приставка означає «під»?" },
+  { clue: "Пов’язаний із зимою.", target: ["зим", "ов", "ий"], tray: ["зим", "ліс", "за", "ов", "н", "к", "ий", "а"], hint: "Корінь — «зим». Суфікс має бути «ов», а закінчення «ий»." },
+  { clue: "Розташований за річкою.", target: ["за", "річ", "н", "ий"], tray: ["за", "пере", "річ", "ліс", "н", "ов", "ий", "а"], hint: "Слово починається з префікса «за», потім корінь «річ»." },
+  { clue: "Без хмар (про небо).", target: ["без", "хмар", "н", "ий"], tray: ["без", "при", "хмар", "вод", "н", "ов", "ий", "а"], hint: "Префікс «без» означає відсутність. Корінь — «хмар»." },
+  { clue: "Розташований біля берега.", target: ["при", "береж", "н", "ий"], tray: ["при", "під", "береж", "зим", "н", "ов", "ий", "а"], hint: "Префікс «при» означає «біля». Корінь — «береж»." },
+  { clue: "Листування між людьми.", target: ["пере", "пис", "к", "а"], tray: ["пере", "над", "пис", "к", "а", "н", "ий", "ліс"], hint: "Префікс «пере», корінь «пис», суфікс «к» і закінчення «а»." }
+];
+var DICT = { "підводний": 1, "надводний": 1, "безводний": 1, "водний": 1, "зимовий": 1, "зарічний": 1, "безхмарний": 1, "прибережний": 1, "переписка": 1, "лісовий": 1, "водяний": 1 };
+var FORM_ENDS = [["о", "Називний", "що?"], ["а", "Родовий", "чого?"], ["у", "Давальний", "чому?"], ["ом", "Орудний", "чим?"], ["і", "Місцевий", "на чому?"]];
+var FORMW = {
+  "вікно": { stem: "вікн", ex: ["вікно", "вікна", "вікну", "вікном", "на вікні"] },
+  "озеро": { stem: "озер", ex: ["озеро", "озера", "озеру", "озером", "на озері"] },
+  "місто": { stem: "міст", ex: ["місто", "міста", "місту", "містом", "у місті"] }
+};
+var TOWERS = {
+  "вод": [
+    { w: "вода", parts: [["вод", "r"], ["а", "e"]] },
+    { w: "водний", parts: [["вод", "r"], ["н", "s"], ["ий", "e"]] },
+    { w: "водяний", parts: [["вод", "r"], ["ян", "s"], ["ий", "e"]] },
+    { w: "підводний", parts: [["під", "p"], ["вод", "r"], ["н", "s"], ["ий", "e"]] },
+    { w: "безводний", parts: [["без", "p"], ["вод", "r"], ["н", "s"], ["ий", "e"]] },
+    { w: "водичка", parts: [["вод", "r"], ["ичк", "s"], ["а", "e"]] }
+  ],
+  "пис": [
+    { w: "переписка", parts: [["пере", "p"], ["пис", "r"], ["к", "s"], ["а", "e"]] },
+    { w: "записка", parts: [["за", "p"], ["пис", "r"], ["к", "s"], ["а", "e"]] },
+    { w: "приписка", parts: [["при", "p"], ["пис", "r"], ["к", "s"], ["а", "e"]] },
+    { w: "описка", parts: [["о", "p"], ["пис", "r"], ["к", "s"], ["а", "e"]] }
+  ]
+};
+var QUIZ2 = [
+  { q: "Яка частина слова змінюється в різних формах одного слова?", o: ["Корінь", "Закінчення", "Основа"], a: 1, why: "Змінюється закінчення." },
+  { q: "Що залишається незмінним у всіх формах слова «вікно»?", o: ["Основа «вікн»", "Закінчення «-о»", "Закінчення «-ом»"], a: 0, why: "Основа — це слово без закінчення, вона не змінюється." },
+  { q: "Чи змінилося значення слова, коли змінилася його форма?", o: ["Так, утворилося нове слово", "Так, змінився корінь", "Ні, це те саме слово в іншій формі"], a: 2, why: "Форми слова мають однакове значення." }
+];
+var QUIZ3 = [
+  { q: "Що однакове в усіх словах на вежі «вод»?", o: ["Закінчення", "Корінь", "Префікс"], a: 1, why: "Корінь «вод» стоїть у кожному слові." },
+  { q: "Слова «вода» і «води» — це…", o: ["форми одного слова", "спільнокореневі слова", "слова з різними коренями"], a: 0, why: "Змінилося лише закінчення, значення однакове." },
+  { q: "Чим відрізняються слова переписка, записка, приписка, описка?", o: ["Коренем", "Суфіксом", "Префіксом"], a: 2, why: "Корінь «пис», суфікс «к» і закінчення «а» однакові. Різні префікси." }
+];
+
+function labInit() {
+  if (labReady) return; labReady = true;
+  fontsReady().then(function () { lab1(); lab2(); lab3(); });
+}
+
+/* --- Експеримент 1 --- */
+function lab1() {
+  var box = $("#st-l1"), st = null, round = 0, placed = [], solved = state.l1.slice(), locked = false, fails = 0;
+  try { st = new Stage($("#c-l1"), { minW: 7, h: 3.2 }); } catch (e) { st = null; }
+  if (!st || !st.ok) { st = null; noGL(box, "3D-модель не завантажилась. Завдання працює й без неї: збирай слово у рамці праворуч."); }
+  var fb = $("#l1-fb"), slots = $("#l1-slots"), tray = $("#l1-tray"), nextB = $("#l1-next");
+  function chipEl(t, k, cls) { var c = el("button", "chip " + k + (cls ? " " + cls : ""), esc(t)); c.type = "button"; return c; }
+  function drawSlots() {
+    slots.innerHTML = "";
+    if (!placed.length) slots.appendChild(el("span", "ph", "Тут буде слово. Торкайся цеглинок у скриньці."));
+    placed.forEach(function (p, i) {
+      var c = chipEl(p.t, p.k); c.title = "Торкнись, щоб прибрати"; c.setAttribute("aria-label", p.t + " — " + KIND_NAME[p.k] + ". Торкнись, щоб прибрати");
+      c.addEventListener("click", function () { if (locked) return; removeAt(i); });
+      slots.appendChild(c);
+    });
+    $$(".chip", tray).forEach(function (c) { c.classList.toggle("used", placed.some(function (p) { return p.btn === c; })); });
+  }
+  function removeAt(i) { placed.splice(i, 1); if (st) st.removeBrick(i); drawSlots(); setFb(fb, "", ""); }
+  function loadRound(r) {
+    round = r; placed = []; locked = false; fails = 0; nextB.hidden = true; setFb(fb, "", "");
+    var R = L1[r]; $("#l1-clue").textContent = (r + 1) + ". " + R.clue;
+    tray.innerHTML = "";
+    shuffle(R.tray).forEach(function (t) {
+      var k = KIND_OF[t], c = chipEl(t, k); c.setAttribute("aria-label", t + " — " + KIND_NAME[k]);
+      c.addEventListener("click", function () {
+        if (locked) return; if (placed.length >= 6) { setFb(fb, "Слово вже довге. Забери зайву цеглинку.", "warn"); return; }
+        placed.push({ t: t, k: k, btn: c }); if (st) st.addBrick(t, k); drawSlots(); setFb(fb, "", "");
+      });
+      tray.appendChild(c);
+    });
+    if (st) st.clear(); if (st) st.layout(true);
+    drawSlots(); drawRounds();
+  }
+  function drawRounds() {
+    var rb = $("#l1-rounds"); rb.innerHTML = "";
+    L1.forEach(function (R, i) {
+      var b = el("button", (solved.indexOf(i) >= 0 ? "done " : "") + (i === round ? "cur" : ""), String(i + 1)); b.type = "button";
+      b.setAttribute("aria-label", "Слово " + (i + 1) + (solved.indexOf(i) >= 0 ? ", виконано" : ""));
+      b.addEventListener("click", function () { loadRound(i); }); rb.appendChild(b);
+    });
+  }
+  $("#l1-undo").addEventListener("click", function () { if (locked || !placed.length) return; removeAt(placed.length - 1); });
+  $("#l1-clear").addEventListener("click", function () { if (locked) return; placed = []; if (st) { st.clear(); st.layout(true); } drawSlots(); setFb(fb, "", ""); });
+  $("#l1-hint").addEventListener("click", function () { setFb(fb, "<b>Підказка.</b> " + esc(L1[round].hint), "warn"); });
+  nextB.addEventListener("click", function () { loadRound((round + 1) % L1.length); });
+  $("#l1-check").addEventListener("click", function () {
+    if (locked) return;
+    if (!placed.length) { setFb(fb, "Спочатку додай цеглинки зі скриньки.", "warn"); return; }
+    var seq = placed.map(function (p) { return p.t; }), R = L1[round], kinds = placed.map(function (p) { return p.k; }).join(""), word = seq.join("");
+    if (seq.join("|") === R.target.join("|")) {
+      locked = true; if (solved.indexOf(round) < 0) { solved.push(round); state.l1 = solved.slice(); }
+      setBest("lab1", solved.length, L1.length);
+      setFb(fb, "Правильно! Це слово «<b>" + esc(word) + "</b>». Воно розбирається так: " + esc(R.target.join(" — ")) + ".", "ok");
+      if (st) st.celebrate(); nextB.hidden = false; drawRounds();
+    } else {
+      var msg;
+      if (DICT[word]) msg = "Таке слово є — «" + esc(word) + "». Але в описі йдеться про інше значення. Подумай ще.";
+      else if (kinds.indexOf("r") < 0) msg = "У слові немає кореня (червона цеглинка). Корінь — головна частина слова.";
+      else if (kinds.charAt(kinds.length - 1) !== "e") msg = "У цих словах є закінчення. Воно стоїть останнім (жовта цеглинка).";
+      else if (!/^p*rs*e$/.test(kinds)) msg = "Порядок такий: префікс, корінь, суфікс, закінчення.";
+      else msg = "Такого слова немає. Перевір корінь і суфікс.";
+      fails++; if (st) st.shakeAll();
+      setFb(fb, msg + (fails >= 2 ? " Натисни «Підказка»." : ""), "bad");
+    }
+  });
+  loadRound(0);
+}
+
+/* --- Експеримент 2 --- */
+function lab2() {
+  var box = $("#st-l2"), st = null, cur = "вікно", form = 0, vis = {}, unlocked = false;
+  try { st = new Stage($("#c-l2"), { minW: 6, h: 3.6 }); } catch (e) { st = null; }
+  if (!st || !st.ok) { st = null; noGL(box, "3D-модель не завантажилась. Завдання працює й без неї: дивись на слово під рамкою."); }
+  function count() { return Object.keys(vis[cur] || {}).length; }
+  function readout() {
+    var W = FORMW[cur], f = FORM_ENDS[form];
+    $("#l2-read").innerHTML = mw([[W.stem, "r"], [f[0], "e"]], true) +
+      '<p class="mean"><b>' + esc(W.ex[form]) + "</b> — " + esc(f[1]) + " відмінок (" + esc(f[2]) + "). Основа: <b>" + esc(W.stem) + "</b>, закінчення: <b>-" + esc(f[0]) + "</b>.</p>";
+    $("#l2-count").textContent = "Переглянуто форм: " + count() + " з 5";
+  }
+  function setForm(i, init) {
+    form = i; vis[cur] = vis[cur] || {}; vis[cur][i] = true;
+    var W = FORMW[cur];
+    if (st) { if (init) st.setRow([[W.stem, "r"], [FORM_ENDS[i][0], "e"]]); else st.replaceBrick(1, FORM_ENDS[i][0], "e"); applyGap(); }
+    readout(); maybeUnlock();
+  }
+  function applyGap() { if (!st) return; st.gap = 0.14 + Number($("#l2-explode").value) / 100 * 1.6; st.layout(false); }
+  function maybeUnlock() {
+    if (unlocked || count() < 5) return; unlocked = true;
+    $("#l2-lock").hidden = true; $("#l2-quiz").hidden = false;
+    makeQuiz($("#l2-quiz"), "l2", QUIZ2, function (s, m) { setBest("lab2", s, m); });
+  }
+  opts($("#l2-words"), Object.keys(FORMW).map(function (k) { return [k, k]; }), function (k) {
+    cur = k; vis[cur] = vis[cur] || {}; setForm(0, true);
+    $$("#l2-forms .btn").forEach(function (x, i) { x.setAttribute("aria-pressed", i === 0 ? "true" : "false"); });
+  });
+  opts($("#l2-forms"), FORM_ENDS.map(function (f, i) { return [i, f[1] + ": " + f[2]]; }), function (i) { setForm(i, false); }, false);
+  $("#l2-forms .btn").setAttribute("aria-pressed", "true");
+  $("#l2-explode").addEventListener("input", applyGap);
+  $("#l2-base").addEventListener("change", function () { if (st) st.showBase(this.checked); });
+}
+
+/* --- Експеримент 3 --- */
+function lab3() {
+  var box = $("#st-l3"), st = null, cur = "вод", rows = [];
+  try { st = new Stage($("#c-l3"), { shadow: false, onPick: function (b) { selectRow(b.row); } }); } catch (e) { st = null; }
+  if (!st || !st.ok) { st = null; noGL(box, "3D-модель не завантажилась. Усі слова видно в списку праворуч."); }
+  function selectRow(ri) {
+    $$("#l3-list .trow").forEach(function (t, i) { t.setAttribute("aria-pressed", i === ri ? "true" : "false"); });
+    var r = rows[ri]; if (!r) return;
+    $("#l3-cap").innerHTML = "<b>" + esc(r.w) + "</b>: " + r.parts.map(function (p) { return esc(p[0]) + " (" + KIND_NAME[p[1]] + ")"; }).join(", ") + ".";
+    if (st) st.selectRow(ri);
+  }
+  function showTower(k) {
+    cur = k; rows = TOWERS[k];
+    var list = $("#l3-list"); list.innerHTML = "";
+    rows.forEach(function (r, i) {
+      var t = el("button", "trow", mw(r.parts, false, true)); t.type = "button"; t.setAttribute("aria-pressed", "false"); t.setAttribute("aria-label", "Слово " + r.w);
+      t.addEventListener("click", function () { selectRow(i); }); list.appendChild(t);
+    });
+    $("#l3-cap").textContent = "Торкнись слова на вежі або в списку.";
+    if (st) { st.setRows(rows.map(function (r) { return r.parts; })); st.rootFocus($("#l3-root").checked); }
+  }
+  opts($("#l3-towers"), Object.keys(TOWERS).map(function (k) { return [k, "Вежа «" + k + "»"]; }), showTower);
+  $("#l3-root").addEventListener("change", function () { if (st) st.rootFocus(this.checked); });
+  makeQuiz($("#l3-quiz"), "l3", QUIZ3, function (s, m) { setBest("lab3", s, m); });
+}
+
+/* =============================================================
+   РЕЗУЛЬТАТ
+============================================================= */
+function taskList() {
+  var t = MISS.map(function (m, i) { return { id: m.id, title: "Практика " + (i + 1) + ". " + m.title, max: m.max }; });
+  t.push({ id: "lab1", title: "3D 1. Складальник слів", max: L1.length });
+  t.push({ id: "lab2", title: "3D 2. Рентген слова: форми й основа", max: 3 });
+  t.push({ id: "lab3", title: "3D 3. Вежа кореня", max: 3 });
+  return t;
+}
+function renderResult() {
+  var tb = $("#r-table tbody"); if (!tb) return;
+  var list = taskList(), sum = 0, mx = 0;
+  tb.innerHTML = "";
+  list.forEach(function (t) {
+    var b = state.best[t.id], s = b ? Math.min(b.s, t.max) : 0;
+    sum += s; mx += t.max;
+    var tr = el("tr", "", "<td>" + esc(t.title) + '</td><td class="n">' + (b ? (s >= t.max ? "✓ " : "") + s + " з " + t.max : "—") + "</td>");
+    tb.appendChild(tr);
+  });
+  var pct = mx ? Math.round(sum * 100 / mx) : 0;
+  $("#r-name").textContent = state.name || "— (впиши прізвище вгорі)";
+  $("#r-total").textContent = sum + " з " + mx;
+  $("#r-pct").textContent = pct + "%";
+  var b12 = pct ? Math.max(1, Math.round(pct * 0.12)) : 0;
+  $("#r-note").textContent = "Орієнтовно за 12-бальною шкалою: " + (b12 || "—") + ". Остаточну оцінку виставляє вчитель(ка).";
+  var d = new Date();
+  try { $("#r-date").textContent = "Знімок зроблено: " + d.toLocaleString("uk-UA"); } catch (e) { $("#r-date").textContent = ""; }
+}
+function initReset() {
+  var b = $("#r-reset"), timer = 0, armed = false;
+  b.addEventListener("click", function () {
+    if (!armed) { armed = true; b.textContent = "Точно? Натисни ще раз"; timer = setTimeout(function () { armed = false; b.textContent = "Почати спочатку"; }, 4000); return; }
+    clearTimeout(timer); armed = false; b.textContent = "Почати спочатку";
+    state.best = {}; state.l1 = []; state.started = 0; save(); location.reload();
+  });
+}
+
+/* =============================================================
+   Навігація
+============================================================= */
+var VIEWS = ["theory", "practice", "lab", "result"];
+function show(v) {
+  if (VIEWS.indexOf(v) < 0) v = "theory";
+  VIEWS.forEach(function (x) { var s = $("#v-" + x); if (s) s.hidden = x !== v; });
+  $$(".tabs a").forEach(function (a) {
+    var on = a.getAttribute("data-view") === v; a.classList.toggle("on", on);
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  if (v === "practice") practiceInit();
+  if (v === "lab") labInit();
+  if (v === "result") renderResult();
+  var top = $(".tabs").getBoundingClientRect().top + window.pageYOffset;
+  if (window.pageYOffset > top) window.scrollTo(0, top);
+}
+function currentView() { return (location.hash || "").replace("#", ""); }
+window.addEventListener("hashchange", function () { show(currentView()); });
+$$("[data-go]").forEach(function (b) { b.addEventListener("click", function () { var v = b.getAttribute("data-go"); if (currentView() === v) show(v); else location.hash = "#" + v; }); });
+
+/* =============================================================
+   Запуск
+============================================================= */
+load();
+if (!storageOK) showWarn();
+var nameInp = $("#pname");
+nameInp.value = state.name;
+nameInp.addEventListener("input", function () { state.name = nameInp.value.trim(); save(); renderResult(); });
+initTheory();
+initReset();
+renderResult();
+show(currentView());
+fontsReady().then(initHero);
+})();
+</script>
+</body>
+</html>
